@@ -144,7 +144,6 @@
                 Abrir caja
             </button>
         {:else}
-            <!-- //TODO agregar función para ingresar dinero en caja -->
             <button class="btn btn-primary mt-4" on:click={() => openModal('deposit')}>
                 Ingresar dinero
             </button>

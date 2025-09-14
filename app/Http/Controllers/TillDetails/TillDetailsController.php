@@ -12,7 +12,7 @@ class TillDetailsController extends ApiController
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
@@ -31,7 +31,7 @@ class TillDetailsController extends ApiController
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
@@ -63,7 +63,7 @@ class TillDetailsController extends ApiController
      * Store a newly created resource in storage from an array
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function storeFromArray(Request $request){
         try{
@@ -86,7 +86,7 @@ class TillDetailsController extends ApiController
      * Display the specified resource.
      *
      * @param  \App\Models\TillDetails  $tillDetails
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show($id)
     {
@@ -121,7 +121,7 @@ class TillDetailsController extends ApiController
             if($request->has('type') && $request->type != '' && $request->type != 'ambos'){
                 $tillDetails = $tillDetails->where('td_type', $request->type == 'ingresos'? true : false );
             }
-            return $this->showAll($tillDetails, 200);
+            return $this->showAll($tillDetails,'api','', 200);
         }catch(\Exception $e){
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo obtener los datos'],500);
         }catch(\Illuminate\Validation\ValidationException $e){
@@ -232,7 +232,7 @@ class TillDetailsController extends ApiController
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\TillDetails  $tillDetails
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
@@ -261,7 +261,7 @@ class TillDetailsController extends ApiController
      * Remove the specified resource from storage.
      *
      * @param  \App\Models\TillDetails  $tillDetails
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy( $id)
     {

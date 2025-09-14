@@ -7,7 +7,9 @@
     import { } from 'os';
 
     let date = new Date();
-    let fullDate = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
+    let month = date.getMonth() + 1;
+    month = month < 10 ? '0' + month : month;
+    let fullDate = date.getFullYear() + '-' + month + '-' + date.getDate();
 
     export let till_id
     let tills = [];
@@ -51,6 +53,7 @@
 		getHistory(till_id,fromDate,toDate);
 	}
     onMount(async () => {
+        console.log('fecha actual: ',fullDate);
         getHistory(till_id,fromDate,toDate);
     });
 
@@ -116,7 +119,7 @@
                 <td class="text-center">{index+1}</td>
                 <td class="text-center">{till.td_desc}</td>
                 <td class="text-center">{new Date(till.created_at).toLocaleString()}</td>
-                <td class="text-center">{till.td_type == true ? 'Ingreso' : 'Egreso'}</td>
+                <td class="text-center" class:text-green-600={till.td_type} class:text-red-600={!till.td_type}>{till.td_type == true ? 'Ingreso' : 'Egreso'}</td>
                 <td class="text-center">{formatNumber(till.td_amount)}</td>
                 <!-- //TODO agregar función para poder eliminar un registro del historial de caja -->
                 <td class="text-center">
