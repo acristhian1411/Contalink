@@ -58,9 +58,9 @@
     }
 
 
-    function OpenAlertMessage(algo) {
-        alertMessage = '';
-        alertType = 'success';
+    function OpenAlertMessage(data) {
+        alertMessage = data.detail?.message || '';
+        alertType = data.detail?.type;
         openAlert = true;
     }
 
@@ -73,7 +73,7 @@
     function closeModal(){
         tillActions = false;
         acctionType = '';
-        getTillAmount()
+        getTillAmount(id);
     }
     function openModal(type){
         acctionType = type
@@ -121,7 +121,7 @@
             on:updateData={() => fetchData()}
             on:close={() => closeModal()}
             alert={OpenAlertMessage}
-            on:showAlert={() => OpenAlertMessage()}
+            on:showAlert={OpenAlertMessage}
         />
     </Modal>
 {/if}

@@ -37,7 +37,7 @@
             }
         }).then((response) => {
             tills = response.data.data;
-            current_page = response.data.currentPage;
+            current_page = response.data.current_page;
             total_items = response.data.per_page;
             total_pages = response.data.last_page;
         }).catch((err) => {
@@ -155,4 +155,3 @@
 			on:page={handlePage}
 			on:row={handleRowsPerPage}
 		/>
-<!-- //TODO agregar paginación -->
