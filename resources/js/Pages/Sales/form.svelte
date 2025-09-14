@@ -64,7 +64,7 @@
      * @returns {void}
      */
     function getTillsByUser(){
-        axios.get(`/api/tills/${user.person_id}/byPerson`).then((response) => {
+        axios.get(`/api/tills/${user.person_id}/byPerson?wantsJson=true`).then((response) => {
             tills = response.data.data;
             if (tills.length === 1) {
                 tillsSelected = {

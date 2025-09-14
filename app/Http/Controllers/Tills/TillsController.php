@@ -93,7 +93,7 @@ class TillsController extends ApiController
             ->orderByDesc('till_details.created_at')
             ->distinct('tills.id')
             ->get();
-            return $this->showAll($tills, 200);
+            return $this->showAll($tills, 'api','',200);
         }catch(\Exception $e){
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo obtener los datos'],500);
         }

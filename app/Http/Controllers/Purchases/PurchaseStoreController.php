@@ -14,26 +14,43 @@ use App\Http\Controllers\Products\ProductsController;
 use Illuminate\Support\Collection;
 class PurchaseStoreController extends ApiController {
     /**
-     * Use the store method of PurchasesController and PurchasesDetailsController to create a new purchase with each details. Also it will use DBTransaction
+     * Usa el controlador PurchasesController y PurchasesDetailsController para crear una nueva compra con cada detalle, ademas usa TillDetailsController y TillDetailProofPaymentsController para registrar el movimiento en la caja. También usara transacción de base de datos para asegurar la integridad de los datos.
      * 
-     * @param int $person_id
-     * @param string $purchase_date
-     * @param string $purchase_number
-     * @param array $purchase_details
-     * @return \Illuminate\Http\Response
+     * @throws \Exception
+     * @throws \Illuminate\Validation\ValidationException
+     * 
+     * @see PurchasesController
+     * @see PurchasesDetailsController
+     * @see TillDetailsController
+     * @see TillDetailProofPaymentsController
+     * @see ProductsController
+     * 
+     * @param Request $request
+     * 
+     *   - user_id: int
+     *   - person_id: int | object
+     *   - purchase_date: date
+     *   - purchase_number: string
+     *   - purchase_details: array
+     *   - till_id: int
+     * 
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request){
         try{
             DB::beginTransaction();
             $reglas = [
                 'user_id' => 'required|integer',
-                'person_id' => 'required|integer',
+                'person_id' => ['required', function ($attribute, $value, $fail) {
+                    if (!is_int($value) && !is_object($value)) {
+                        $fail($attribute.' debe ser un entero o un objeto.');
+                    }
+                }],
                 'purchase_date' => 'required|date',
                 'purchase_number' => 'required|string|unique:purchases',
                 'purchase_details' => 'required|array'
             ];
             $request->validate($reglas);
-            // Check if there is enough cash in the till to make the purchase
             $tills = new TillsController;
             $till_data = new Request([
                 'fromController'=> true
@@ -63,7 +80,7 @@ class PurchaseStoreController extends ApiController {
             $update = $products->updatePriceAndQty($product_data);
             $purchases = new PurchasesController;
             $purchase_data = new Request([
-                'person_id' => $request->person_id,
+                'person_id' => is_object($request->person_id) ? $request->person_id->value : $request->person_id,
                 'purchase_date' => $request->purchase_date,
                 'purchase_number' => $request->purchase_number,
             ]);
@@ -96,11 +113,10 @@ class PurchaseStoreController extends ApiController {
             $till_detail_proof_payments = new TillDetailProofPaymentsController;
             $till_detail_proof_payments_data = new Request([
                 'till_detail_id' => $till_detail_stored->original['data']['id'],
-                'proof_payment_id' => $request->proofPayments[0]['value'],
-                'td_pr_desc' => $request->proofPayments[0]['value'] == 1 ? 'Efectivo' : $request->proofPayments[0]['td_pr_desc'],
+                'proof_payment_id' => empty($request->proofPayments) ? 1 : $request->proofPayments[0]['value'],
+                'td_pr_desc' => empty($request->proofPayments) ? 1 : ($request->proofPayments[0]['value'] == 1 ? 'Efectivo' : $request->proofPayments[0]['td_pr_desc']),
             ]);
             $till_detail_proof_payments_stored = $till_detail_proof_payments->store($till_detail_proof_payments_data);
-            
             DB::commit();
             $something = [];
             return $this->showAfterAction($something,'create', 201);

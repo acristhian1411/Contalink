@@ -73,6 +73,7 @@
     function closeModal(){
         tillActions = false;
         acctionType = '';
+        getTillAmount()
     }
     function openModal(type){
         acctionType = type

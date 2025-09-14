@@ -26,7 +26,7 @@ class TillsProcessController extends ApiController{
         ];
         $request->validate($rules);
             try{
-                // DB::beginTransaction();
+                DB::beginTransaction();
                 $till = Tills::findOrFail($request->till_id);
                 $till->open();
                 $now = date('Y-m-d');
@@ -40,10 +40,11 @@ class TillsProcessController extends ApiController{
                     'td_date' => $now,
                     'td_type' => true,
                     'ref_id'=> 0,
-                    'td_amount' => intval($request->td_amount)
+                    'td_amount' => intval($request->td_amount),
+                    'wantsJson'=>true
                 ]);
                 $detailMessage = $detail->store($detail_data);
-                $details_id = $detailMessage->original['data']['id'];
+                $details_id = data_get($detailMessage, 'original.data.id');
                 $detProofPayment = new TillDetailProofPaymentsController;
                 $proofs = new Request([
                     'till_detail_id'=>$details_id,
@@ -51,13 +52,13 @@ class TillsProcessController extends ApiController{
                     'td_pr_desc'=>'Ninguno'
                 ]);
                 $detProofPayment->store($proofs);
-                // DB::commit();
+                DB::commit();
                 return response()->json(['message'=>'Caja abierta con exito']);
             }catch(\Exception $e){
-                // DB::rollback();
+                DB::rollback();
                 return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo abrir la caja'],500);
             }catch(\Illuminate\Validation\ValidationException $e){
-                // DB::rollback();
+                DB::rollback();
                 return response()->json(['error'=>$e->getMessage(),'message'=>'Los datos enviados no son correctos'],420);
             }
     }
@@ -76,6 +77,7 @@ class TillsProcessController extends ApiController{
         ];
         $request->validate($rules);
         try{
+            DB::beginTransaction();
                 $till = Tills::findOrFail($request->till_id);
                 $till->close();
                 $now = date('Y-m-d');
@@ -103,10 +105,11 @@ class TillsProcessController extends ApiController{
                 ]);
                 $detProofPayment->store($proofs);
                 
+                DB::commit();
                 return response()->json(['message'=>'Caja cerrada con exito']);
             
         }catch(\Exception $e){
-            
+            DB::rollback();
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo cerrar la caja'],500);
         }
     }
@@ -125,6 +128,7 @@ class TillsProcessController extends ApiController{
         ];
         $request->validate($rules);
         try{
+            DB::beginTransaction();
             $now = date('Y-m-d');
             
             $detail = new TillDetailsController;
@@ -150,10 +154,11 @@ class TillsProcessController extends ApiController{
             ]);
             $detProofPayment->store($proofs);
             
+            DB::commit();
             return response()->json(['message'=>'Deposito realizado con exito']);
             
         }catch(\Exception $e){
-            
+            DB::rollback();
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo realizar el deposito'],500);
         }
     }
@@ -226,9 +231,7 @@ class TillsProcessController extends ApiController{
             ]);
             $originDetail = new TillDetailsController;
             $originStored = $originDetail->store($origin_req);
-            // dd($originStored);
             $originID = $originStored->original['data']['id'];
-            // dd($originID);
             $detProofPayment = new TillDetailProofPaymentsController;
             $proofs = new Request([
                 'till_detail_id'=>$originID,
@@ -240,7 +243,6 @@ class TillsProcessController extends ApiController{
             return response()->json(['message'=>'Transferencia realizada con exito']);
         }catch(\Exception $e){
             DB::rollback();
-            dd($e);
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo realizar la transferencia'],500);
         }
     }

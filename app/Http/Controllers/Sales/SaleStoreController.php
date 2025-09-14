@@ -96,17 +96,15 @@ class SaleStoreController extends ApiController {
             $till_detail_proof_payments = new TillDetailProofPaymentsController;
             $till_detail_proof_payments_data = new Request([
                 'till_detail_id' => $till_detail_stored->original['data']['id'],
-                'proof_payment_id' => $request->proofPayments[0]['value'],
-                'td_pr_desc' => $request->proofPayments[0]['value'] == 1 ? 'Efectivo' : $request->proofPayments[0]['td_pr_desc'],
+                'proof_payment_id' => empty($request->proofPayments) ? 1 : $request->proofPayments[0]['value'],
+                'td_pr_desc' => empty($request->proofPayments) ? 1 : ($request->proofPayments[0]['value'] == 1 ? 'Efectivo' : $request->proofPayments[0]['td_pr_desc']),
             ]);
             $till_detail_proof_payments_stored = $till_detail_proof_payments->store($till_detail_proof_payments_data);
-            
             DB::commit();
             $something = [];
             return $this->showAfterAction($something,'create', 201);
         }catch(\Exception $e){
             DB::rollback();
-            // dd($e);
             return response()->json(['error' => $e, 'message'=>'Ocurrió un error mientras se creaba el registro'],500);
         }catch(\Illuminate\Validation\ValidationException $e){
             DB::rollBack();
