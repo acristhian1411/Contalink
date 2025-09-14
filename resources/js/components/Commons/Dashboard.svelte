@@ -7,7 +7,7 @@
   </script>
   
   <div class="grid grid-cols-2 gap-6 p-8">
-    <!-- //TODO agregar vista para registrar ventas -->
+    
     <button class="flex flex-col items-center justify-center p-6 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700" on:click={() => goTo('/create-sales')}>
       <!-- SVG Icon for Ventas -->
       <CartIcon/>
