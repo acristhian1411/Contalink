@@ -16,16 +16,17 @@ class PaymentTypesController extends ApiController
      */
     public function index()
     {
-        try{
+        try {
             $t = PaymentTypes::query()->first();
             $query = PaymentTypes::query();
             $query = $this->filterData($query, $t);
             $datos = $query->with('proofPayments')
-            ->get();
+                ->get();
+            // dd($datos);
             $from = request()->wantsJson() ? 'api' : 'web';
             return $this->showAll($datos, $from, 'PaymentTypes/index', 200);
-        }catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo obtener los datos']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo obtener los datos']);
         }
     }
 
@@ -37,22 +38,21 @@ class PaymentTypesController extends ApiController
      */
     public function store(Request $request)
     {
-        try{
+        try {
             $reglas = [
                 'payment_type_desc' => 'required'
             ];
             $request->validate($reglas);
             $paymentTypes = PaymentTypes::create($request->all());
-            return response()->json(['message'=>'Registro creado con exito','data'=>$paymentTypes],201);
-        }catch(\Illuminate\Validation\ValidationException $e){
+            return response()->json(['message' => 'Registro creado con exito', 'data' => $paymentTypes], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'error'=>$e,
-                'message'=>'Los datos no son correctos',
-                'details' => method_exists($e, 'errors') ? $e->errors() : null 
-            ],422);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo crear el registro']);
+                'error' => $e,
+                'message' => 'Los datos no son correctos',
+                'details' => method_exists($e, 'errors') ? $e->errors() : null
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo crear el registro']);
         }
     }
 
@@ -64,15 +64,15 @@ class PaymentTypesController extends ApiController
      */
     public function show($id)
     {
-        try{
+        try {
             $paymentTypes = PaymentTypes::findOrFail($id);
             $audits = $paymentTypes->audits;
-            if(request()->wantsJson()){
-                return $this->showOne($paymentTypes,$audits, 200);
+            if (request()->wantsJson()) {
+                return $this->showOne($paymentTypes, $audits, 200);
             }
-            return Inertia::render('PaymentTypes/show', ['paymentTypes' => $paymentTypes,'audits'=>$audits]);
-        }catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo obtener los datos']);
+            return Inertia::render('PaymentTypes/show', ['paymentTypes' => $paymentTypes, 'audits' => $audits]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo obtener los datos']);
         }
     }
 
@@ -83,27 +83,26 @@ class PaymentTypesController extends ApiController
      * @param  \App\Models\PaymentTypes  $paymentTypes
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request,  $id)
+    public function update(Request $request, $id)
     {
-        try{
+        try {
             $reglas = [
                 'payment_type_desc' => 'required'
             ];
             $request->validate($reglas);
             $paymentTypes = PaymentTypes::findOrFail($id);
             $paymentTypes->update($request->all());
-            if(request()->wantsJson()){
-                return response()->json(['message'=>'Registro Actualizado con exito','data'=>$paymentTypes],200);
+            if (request()->wantsJson()) {
+                return response()->json(['message' => 'Registro Actualizado con exito', 'data' => $paymentTypes], 200);
             }
-        }catch(\Illuminate\Validation\ValidationException $e){
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'error'=>$e->getMessage(),
-                'message'=>'Los datos no son correctos',
-                'details' => method_exists($e, 'errors') ? $e->errors() : null 
-            ],422);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo actualizar el registro']);
+                'error' => $e->getMessage(),
+                'message' => 'Los datos no son correctos',
+                'details' => method_exists($e, 'errors') ? $e->errors() : null
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo actualizar el registro']);
         }
     }
 
@@ -113,15 +112,14 @@ class PaymentTypesController extends ApiController
      * @param  \App\Models\PaymentTypes  $paymentTypes
      * @return \Illuminate\Http\Response
      */
-    public function destroy( $id)
+    public function destroy($id)
     {
-        try{
+        try {
             $paymentTypes = PaymentTypes::findOrFail($id);
             $paymentTypes->delete();
-            return response()->json(['message'=>'Eliminado con exito']);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo eliminar el registro']);
+            return response()->json(['message' => 'Eliminado con exito']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo eliminar el registro']);
         }
     }
 }

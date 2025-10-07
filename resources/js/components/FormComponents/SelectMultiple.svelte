@@ -1,19 +1,31 @@
 <script>
     import { onMount, onDestroy } from "svelte";
+    import { createEventDispatcher } from "svelte";
     export let options = []; // Lista de opciones
     export let placeholder = "Seleccionar...";
-    export let selected; // Valores seleccionados
+    // export let selected; // Valores seleccionados
 
     let open = false;
     let container;
+    let internalSelected = [];
+
+    const dispatch = createEventDispatcher();
+
+    function updateSelected() {
+        console.log("Selected updated:", internalSelected);
+        dispatch("change", internalSelected);
+    }
 
     function toggleOption(option) {
-        let exists = selected.find((o) => o.value === option.value);
+        const exists = internalSelected.find((o) => o.value === option.value);
         if (exists) {
-            selected = selected.filter((o) => o.value !== option.value);
+            internalSelected = internalSelected.filter(
+                (o) => o.value !== option.value,
+            );
         } else {
-            selected = [...selected, option];
+            internalSelected = [...internalSelected, option];
         }
+        updateSelected(internalSelected);
     }
     function toggleDropdown() {
         open = !open;
@@ -25,13 +37,14 @@
         }
     }
 
-    const isSelected = (option) => selected.includes(option);
+    const isSelected = (option) =>
+        internalSelected.some((o) => o.value === option.value);
 
     onMount(() => {
         // Inicializar selected si es necesario
-        if (!Array.isArray(selected)) {
-            selected = [];
-        }
+        internalSelected = Array.isArray(internalSelected)
+            ? [...internalSelected]
+            : [];
         document.addEventListener("click", handleClickOutside);
     });
     onDestroy(() => {
@@ -41,18 +54,10 @@
 
 <div class="relative w-full" bind:this={container}>
     <!-- Selector principal -->
-    <button
-        type="button"
-        class="peer p-4 block w-full border border-gray-200 rounded-lg text-sm placeholder:text-transparent
-            focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none
-            bg-white text-gray-900 focus:pt-6 focus:pb-2
-            [&:not(:placeholder-shown)]:pt-3
-            [&:not(:placeholder-shown)]:pb-2"
-        on:click={toggleDropdown}
-    >
+    <button type="button" class="select-multiple-btn" on:click={toggleDropdown}>
         <span class="truncate text-left block">
-            {#if selected.length > 0}
-                {selected.map((val) => val.label).join(", ")}
+            {#if internalSelected.length > 0}
+                {internalSelected.map((val) => val.label).join(", ")}
             {:else}
                 <span class="text-gray-400">{placeholder}</span>
             {/if}
@@ -96,7 +101,16 @@
 <style>
     /* Evita que la lista se cierre al hacer clic (si se usa fuera de un form) */
     /* button: focus + div; */
-    div:hover {
+    /* div:hover {
         display: block;
+    } */
+    .select-multiple-btn {
+        @apply w-full bg-gray-700 border border-gray-200 rounded-lg shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer;
+        placeholder: text-transparent;
+        focus: outline-none;
+        focus: ring-1;
+        focus: ring-blue-500;
+        focus: border-blue-500;
+        sm: text-sm;
     }
 </style>

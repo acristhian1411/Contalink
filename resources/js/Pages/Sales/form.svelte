@@ -111,6 +111,7 @@
                 paymentTypesProcessed = paymentTypes.map((x) => ({
                     label: x.payment_type_desc,
                     value: x.id,
+                    proof_payments: x.proof_payments,
                 }));
             })
             .catch((err) => {
@@ -121,6 +122,11 @@
                     },
                 };
             });
+    }
+    function handleChangePaymentType(event) {
+        paymentTypesSelected = event.detail;
+        console.log(paymentTypesSelected, event.detail);
+        filterProofPaymentTypes();
     }
     // end region
 
@@ -135,31 +141,6 @@
             .get(`/api/persons?p_type_id=2`)
             .then((response) => {
                 Clients = response.data.data;
-            })
-            .catch((err) => {
-                let detail = {
-                    detail: {
-                        type: "delete",
-                        message: err.response.data.message,
-                    },
-                };
-            });
-    }
-
-    /**
-     * Función para buscar los Clientes por nombre
-     * @param {event} event
-     * @returns {void}
-     */
-    function searchClients(event) {
-        let search = event.detail;
-        axios
-            .get(`/api/persons-search-by-type/2?search=${search}`)
-            .then((response) => {
-                Clients = response.data.data.map((x) => ({
-                    label: x.person_fname + " " + x.person_lastname,
-                    value: x.id,
-                }));
             })
             .catch((err) => {
                 let detail = {
@@ -239,13 +220,18 @@
     function filterProofPaymentTypes(event) {
         if (paymentTypesSelected != null) {
             proofPaymentTypes = paymentTypes
-                .filter((x) => x.id == paymentTypesSelected.value)[0]
-                .proof_payments.map((x) => ({
-                    label: x.proof_payment_desc,
-                    value: x.id,
-                    td_pr_desc: "",
-                }));
+                .filter((x) =>
+                    paymentTypesSelected.some((pt) => pt.value === x.id),
+                )
+                .flatMap((x) =>
+                    x.proofPayments.map((p) => ({
+                        label: p.proof_payment_desc,
+                        value: p.id,
+                        td_pr_desc: "",
+                    })),
+                );
         }
+        console.log("formas de pago: ", proofPaymentTypes);
     }
 
     async function handleCreateObject() {
@@ -439,26 +425,13 @@
             />
         </div>
         <div class="col-span-4">
-            <!-- <Autocomplete
-                {errors}
-                label="Tipo de Pago"
-                bind:item_selected={paymentTypesSelected}
-                items={paymentTypes.map((x) => ({
-                    label: x.payment_type_desc,
-                    value: x.id,
-                }))}
-                searchTerm={searchTermPaymentTypes}
-                showDropdown={showDropdownPaymentTypes}
-                loading={loadingPaymentTypes}
-                filterdItem={paymentTypes}
-            /> -->
             <SelectMultiple
                 options={paymentTypesProcessed}
                 placeholder="Seleccione los tipos de pago"
-                bind:selected={paymentTypesSelected}
+                on:change={handleChangePaymentType}
             />
         </div>
-        {#if paymentTypesSelected && paymentTypesSelected.value != 1}
+        {#if paymentTypesSelected != null && paymentTypesSelected.filter((x) => x.value != 1).length > 0}
             {#each proofPaymentTypes as item}
                 <div class="col-span-4">
                     <Textfield

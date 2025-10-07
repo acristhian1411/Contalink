@@ -14,14 +14,14 @@ class ProofPayments extends Model implements AuditableContract
     use Auditable;
     use SoftDeletes;
 
-    protected $fillable = ['proof_payment_desc','payment_type_id'];
+    protected $fillable = ['proof_payment_desc', 'payment_type_id'];
 
     public function paymentType()
     {
-        return $this->belongsTo(PaymentTypes::class,'payment_type_id','id');
+        return $this->belongsTo(PaymentTypes::class, 'payment_type_id', 'id');
     }
     public function tillDetailProofPayments()
     {
-        return $this->hasMany(TillDetailProofPayments::class,'id', 'proof_payment_id');
+        return $this->hasMany(TillDetailProofPayments::class, 'id', 'proof_payment_id');
     }
 }
