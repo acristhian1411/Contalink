@@ -35,5 +35,4 @@ class PaymentTypes extends Model implements AuditableContract
     {
         return $this->hasMany(ProofPayments::class, 'payment_type_id', 'id');
     }
-
 }

@@ -109,7 +109,7 @@
             .then((response) => {
                 paymentTypes = response.data.data;
                 paymentTypesProcessed = paymentTypes.map((x) => ({
-                    label: x.payment_type_desc,
+                    label: x.paymentTypeDesc,
                     value: x.id,
                     proof_payments: x.proof_payments,
                 }));
@@ -226,12 +226,13 @@
                 .flatMap((x) =>
                     x.proofPayments.map((p) => ({
                         label: p.proof_payment_desc,
+                        paymentTypeDesc: x.paymentTypeDesc,
                         value: p.id,
+                        amount: 0,
                         td_pr_desc: "",
                     })),
                 );
         }
-        console.log("formas de pago: ", proofPaymentTypes);
     }
 
     async function handleCreateObject() {
@@ -424,23 +425,32 @@
                 filterdItem={tills}
             />
         </div>
-        <div class="col-span-4">
+        <div class="col-span-5">
             <SelectMultiple
                 options={paymentTypesProcessed}
                 placeholder="Seleccione los tipos de pago"
                 on:change={handleChangePaymentType}
             />
         </div>
-        {#if paymentTypesSelected != null && paymentTypesSelected.filter((x) => x.value != 1).length > 0}
+        {#if paymentTypesSelected != null && paymentTypesSelected.length > 0}
             {#each proofPaymentTypes as item}
                 <div class="col-span-4">
                     <Textfield
-                        label={item.label}
-                        bind:value={item.td_pr_desc}
+                        label={item.paymentTypeDesc}
+                        bind:value={item.amount}
                         errors={errors?.td_pr_desc
                             ? { message: errors.td_pr_desc[0] }
                             : null}
                     />
+                    {#if item.paymentTypeDesc !== "Efectivo"}
+                        <Textfield
+                            label={item.label}
+                            bind:value={item.td_pr_desc}
+                            errors={errors?.td_pr_desc
+                                ? { message: errors.td_pr_desc[0] }
+                                : null}
+                        />
+                    {/if}
                 </div>
             {/each}
         {/if}
