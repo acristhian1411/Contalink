@@ -138,6 +138,9 @@ return [
             'required' => 'Debe agregar al menos producto al carrito.',
             'min' => 'Debe haber al menos :min producto en los detalles de la venta.',
         ],
+        'sale_number' => [
+            'unique' => 'El número de factura ya está en uso. Por favor, ingrese uno diferente.',
+        ],
     ],
 
     /*
@@ -152,6 +155,7 @@ return [
     */
 
     'attributes' => [
+        'sale_number' => 'Número de factura',
         'proofPayments' => 'Tipos de pago',
         'sale_details' => 'Detalles de la venta',
         'till_type_desc' => 'Descripción',

@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Rules\ValidProofPayments;
 
 class StoreSalesRequest extends FormRequest
 {
@@ -28,7 +29,7 @@ class StoreSalesRequest extends FormRequest
             'sale_date' => 'required|date',
             'sale_number' => 'required|string|unique:sales',
             'sale_details' => 'required|array',
-            'proofPayments' => 'required|array'
+            'proofPayments' => ['required', 'array', new ValidProofPayments()]
         ];
     }
 }
