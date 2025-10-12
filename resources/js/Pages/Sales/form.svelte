@@ -622,33 +622,31 @@
                     <td class="text-center">
                         {#if proofPaymentTypes.length > 0}
                             <span
-                                class={proofPaymentTypes
-                                    .reduce(
+                                class={parseInt(
+                                    proofPaymentTypes.reduce(
                                         (acc, curr) =>
                                             acc + parseInt(curr.amount),
                                         0,
-                                    )
-                                    .toFixed(2) <
-                                saleDetails
-                                    .reduce(
+                                    ),
+                                ) <
+                                parseInt(
+                                    saleDetails.reduce(
                                         (acc, curr) =>
                                             acc +
                                             curr.product_selling_price *
                                                 curr.quantity,
                                         0,
-                                    )
-                                    .toFixed(2)
-                                    ? "text-red-500"
-                                    : "text-green-500"}
+                                    ),
+                                )
+                                    ? "text-red-500 text-base font-bold"
+                                    : "text-green-500 text-base font-bold"}
                             >
                                 Recibido: {formatNumber(
-                                    proofPaymentTypes
-                                        .reduce(
-                                            (acc, curr) =>
-                                                acc + parseInt(curr.amount),
-                                            0,
-                                        )
-                                        .toFixed(2),
+                                    proofPaymentTypes.reduce(
+                                        (acc, curr) =>
+                                            acc + parseInt(curr.amount),
+                                        0,
+                                    ),
                                 )}
                             </span>
                         {/if}
@@ -656,15 +654,13 @@
                     <td class="text-center text-base font-bold">
                         <span>
                             {formatNumber(
-                                saleDetails
-                                    .reduce(
-                                        (acc, curr) =>
-                                            acc +
-                                            curr.product_selling_price *
-                                                curr.quantity,
-                                        0,
-                                    )
-                                    .toFixed(2),
+                                saleDetails.reduce(
+                                    (acc, curr) =>
+                                        acc +
+                                        curr.product_selling_price *
+                                            curr.quantity,
+                                    0,
+                                ),
                             )}
                         </span>
                     </td>
