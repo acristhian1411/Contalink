@@ -1,6 +1,6 @@
 <script>
     import axios from "axios";
-    import { onMount } from "svelte";
+    import { onMount, onDestroy } from "svelte";
     import { createEventDispatcher } from "svelte";
     import { SearchIcon } from "@components/Icons/";
     import {
@@ -18,6 +18,7 @@
     import DetailsTable from "./DetailsTable.svelte";
     import { Grid, GridItem } from "@components/utilities";
     import Form from "@pages/Clients/form.svelte";
+    import { get } from "svelte/store";
 
     // cosas que se optienen por props
     export let user;
@@ -56,7 +57,8 @@
     let openAlert = false;
     let alertMessage = "";
     let alertType = "";
-    $: saleDetails;
+    $: saleDetails, getAmountTotal();
+    $: proofPaymentTypes, getAmountReceived();
     // $: paymentTypesSelected, filterProofPaymentTypes();
     let date = new Date();
 
@@ -125,7 +127,6 @@
     }
     function handleChangePaymentType(event) {
         paymentTypesSelected = event.detail;
-        console.log(paymentTypesSelected, event.detail);
         filterProofPaymentTypes();
     }
     // end region
@@ -189,7 +190,39 @@
         showClientForm = false;
     }
 
+    function getAmountTotal() {
+        if (saleDetails.length == 0) {
+            return 0;
+        }
+        console.log("Calculating total...", saleDetails);
+
+        return saleDetails
+            .reduce(
+                (acc, curr) => acc + curr.product_selling_price * curr.quantity,
+                0,
+            )
+            .toFixed(2);
+    }
+
+    function getAmountReceived() {
+        if (proofPaymentTypes.length == 0) {
+            return 0;
+        }
+        return proofPaymentTypes
+            .reduce((acc, curr) => acc + parseInt(curr.amount), 0)
+            .toFixed(2);
+    }
+
+    function handleKeydown(e) {
+        if (e.altKey && e.key === "g") {
+            e.preventDefault();
+            console.log("Guardando...");
+            document.querySelector("button[type='submit']")?.click();
+        }
+    }
+
     onMount(() => {
+        window.addEventListener("keydown", handleKeydown);
         getPaymentTypes();
         getClients();
         getTillsByUser();
@@ -199,6 +232,9 @@
             sale_date = item.sale_date;
             sale_status = item.sale_status;
         }
+    });
+    onDestroy(() => {
+        window.removeEventListener("keydown", handleKeydown);
     });
 
     function OpenModal() {
@@ -236,6 +272,7 @@
     }
 
     async function handleCreateObject() {
+        console.log("Creating object...");
         try {
             const res = await axios.post(`/api/storesale`, {
                 user_id: user.id,
@@ -252,11 +289,13 @@
             });
             openAlerts(res.data.message, "success");
         } catch (err) {
-            errors = err.response.data.details
-                ? err.response.data.details
-                : null;
-
-            openAlerts(err.response.data.message, "delete");
+            err.response?.data?.errors
+                ? ((errors = err.response.data.errors),
+                  openAlerts("Datos enviados no son correctos", "error"))
+                : ((errors = err.response.data?.error
+                      ? err.response.data.error
+                      : null),
+                  openAlerts(err.response.data.message, "error"));
         }
     }
 
@@ -425,19 +464,29 @@
                 filterdItem={tills}
             />
         </div>
-        <div class="col-span-5">
+        <div class="col-span-4">
             <SelectMultiple
+                name="paymentTypes"
                 options={paymentTypesProcessed}
                 placeholder="Seleccione los tipos de pago"
                 on:change={handleChangePaymentType}
             />
+            <!-- svelte-ignore a11y-label-has-associated-control -->
+            <label for="paymentTypes">
+                {#if errors?.proofPayments}
+                    <span class="mt-2 text-base text-red-500 block"
+                        >{errors.proofPayments[0]}</span
+                    >
+                {/if}
+            </label>
         </div>
         {#if paymentTypesSelected != null && paymentTypesSelected.length > 0}
             {#each proofPaymentTypes as item}
                 <div class="col-span-4">
                     <Textfield
-                        label={item.paymentTypeDesc}
+                        label={"Monto " + item.paymentTypeDesc}
                         bind:value={item.amount}
+                        type="number"
                         errors={errors?.td_pr_desc
                             ? { message: errors.td_pr_desc[0] }
                             : null}
@@ -454,7 +503,19 @@
                 </div>
             {/each}
         {/if}
+        <div class="col-span-12 flex justify-end gap-2 mt-4 mb-2">
+            <button class="btn btn-primary" type="submit"> Guardar </button>
+            <button class="btn btn-secondary" on:click={close}>
+                Cancelar
+            </button>
+        </div>
     </div>
+    <hr class="my-4" />
+    {#if errors?.sale_details}
+        <span class="mt-2 text-base text-red-500 block"
+            >{errors.sale_details[0]}</span
+        >
+    {/if}
     <table class="table w-full">
         <thead>
             <tr>
@@ -484,7 +545,8 @@
                             <button
                                 type="button"
                                 class="btn btn-primary"
-                                on:click={() => OpenModal()}>Agregar</button
+                                on:click={() => OpenModal()}
+                                >Agregar Producto</button
                             >
                         </div>
                     </div>
@@ -494,17 +556,31 @@
         <tbody>
             {#each saleDetails as item, i (item.id)}
                 <tr class="hover">
-                    <td>
-                        <Textfield
+                    <td class="text-center">
+                        <input
+                            type="number"
+                            class="peer p-4 block border-gray-200 rounded-lg text-base placeholder:text-transparent focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none
+                            focus:pt-6
+                            focus:pb-2
+                            [&:not(:placeholder-shown)]:pt-6
+                            [&:not(:placeholder-shown)]:pb-2
+                            autofill:pt-6
+                            autofill:pb-2"
+                            min="1"
+                            bind:value={item.quantity}
+                        />
+                        <!-- <Textfield
                             label=""
                             type="number"
                             bind:value={item.quantity}
                             errors={errors?.quantity
                                 ? { message: errors.quantity[0] }
                                 : null}
-                        />
+                        /> -->
                     </td>
-                    <td class="text-center">{item.product_name}</td>
+                    <td class="text-center text-xl font-bold"
+                        >{item.product_name}</td
+                    >
                     <td class="text-center">{item.iva_type_percent}</td>
                     <td class="text-center">
                         <Textfield
@@ -516,7 +592,7 @@
                                 : null}
                         />
                     </td>
-                    <td class="text-center"
+                    <td class="text-center text-base font-bold"
                         >{formatNumber(
                             parseInt(item.product_selling_price) *
                                 item.quantity,
@@ -526,9 +602,42 @@
             {/each}
             {#if saleDetails.length > 0}
                 <tr>
-                    <td colspan="4">Total</td>
-
+                    <td colspan="3">Total</td>
                     <td class="text-center">
+                        {#if proofPaymentTypes.length > 0}
+                            <span
+                                class={proofPaymentTypes
+                                    .reduce(
+                                        (acc, curr) =>
+                                            acc + parseInt(curr.amount),
+                                        0,
+                                    )
+                                    .toFixed(2) <
+                                saleDetails
+                                    .reduce(
+                                        (acc, curr) =>
+                                            acc +
+                                            curr.product_selling_price *
+                                                curr.quantity,
+                                        0,
+                                    )
+                                    .toFixed(2)
+                                    ? "text-red-500"
+                                    : "text-green-500"}
+                            >
+                                Recibido: {formatNumber(
+                                    proofPaymentTypes
+                                        .reduce(
+                                            (acc, curr) =>
+                                                acc + parseInt(curr.amount),
+                                            0,
+                                        )
+                                        .toFixed(2),
+                                )}
+                            </span>
+                        {/if}
+                    </td>
+                    <td class="text-center text-base font-bold">
                         <span>
                             {formatNumber(
                                 saleDetails
@@ -547,7 +656,4 @@
             {/if}
         </tbody>
     </table>
-
-    <button class="btn btn-primary" type="submit">Guardar</button>
-    <button class="btn btn-secondary" on:click={close}>Cancelar</button>
 </form>

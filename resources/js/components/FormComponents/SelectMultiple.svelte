@@ -3,6 +3,7 @@
     import { createEventDispatcher } from "svelte";
     export let options = []; // Lista de opciones
     export let placeholder = "Seleccionar...";
+    export let name = "";
     // export let selected; // Valores seleccionados
 
     let open = false;
@@ -52,7 +53,7 @@
     });
 </script>
 
-<div class="relative w-full" bind:this={container}>
+<div {name} class="relative w-full" bind:this={container}>
     <!-- Selector principal -->
     <button type="button" class="select-multiple-btn" on:click={toggleDropdown}>
         <span class="truncate text-left block">
