@@ -177,10 +177,25 @@
         alertType = type;
         alertMessage = message;
     }
-    // end region
-
     function OpenAlertMessage(event) {
         dispatch("message", event.detail);
+    }
+    // end region
+
+    function resetForm() {
+        person_id = "";
+        sale_date = date.toISOString().slice(0, 10);
+        sale_status = "";
+        sale_number = "";
+        saleDetails = [];
+        proofPaymentTypes = [];
+        paymentTypesSelected = [];
+        tillsSelected = [];
+        ClientsSelected = [];
+        searchTermClients = "";
+        searchTermPaymentTypes = "";
+        tillsSearchTerm = "";
+        errors = null;
     }
 
     function OpenClientForm() {
@@ -288,6 +303,7 @@
                 proofPayments: proofPaymentTypes,
             });
             openAlerts(res.data.message, "success");
+            resetForm();
         } catch (err) {
             err.response?.data?.errors
                 ? ((errors = err.response.data.errors),

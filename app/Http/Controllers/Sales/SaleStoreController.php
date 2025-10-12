@@ -72,26 +72,34 @@ class SaleStoreController extends ApiController
             ]);
             $det = $sale_details->storeMany($sale_details_data);
             Log::alert($det);
-            $till_details = new TillDetailsController;
-            $till_details_data = new Request([
-                'till_id' => $request->till_id,
-                'account_p_id' => 1,
-                'ref_id' => $sale_id,
-                'person_id' => $request->user_id,
-                'td_desc' => "Venta {$request->sale_number}",
-                'td_date' => $request->sale_date,
-                'td_type' => true,
-                'td_amount' => $sale_amount
-            ]);
-            $till_detail_stored = $till_details->store($till_details_data);
-            Log::error($till_detail_stored);
-            $till_detail_proof_payments = new TillDetailProofPaymentsController;
-            $till_detail_proof_payments_data = new Request([
-                'till_detail_id' => $till_detail_stored->original['data']['id'],
-                'proof_payment_id' => empty($request->proofPayments) ? 1 : $request->proofPayments[0]['value'],
-                'td_pr_desc' => empty($request->proofPayments) ? 1 : ($request->proofPayments[0]['value'] == 1 ? 'Efectivo' : $request->proofPayments[0]['td_pr_desc']),
-            ]);
-            $till_detail_proof_payments_stored = $till_detail_proof_payments->store($till_detail_proof_payments_data);
+            foreach ($request->proofPayments as $payment) {
+                $till_details = new TillDetailsController;
+                $till_details_data = new Request([
+                    'till_id' => $request->till_id,
+                    'account_p_id' => 1,
+                    'ref_id' => $sale_id,
+                    'person_id' => $request->user_id,
+                    'td_desc' => "Venta {$request->sale_number}",
+                    'td_date' => $request->sale_date,
+                    'td_type' => true,
+                    'td_amount' => $payment['amount'],
+                ]);
+                $till_detail_stored = $till_details->store($till_details_data);
+                Log::error($till_detail_stored);
+                $till_detail_proof_payments = new TillDetailProofPaymentsController;
+                $till_detail_proof_payments_data = new Request([
+                    'till_detail_id' => $till_detail_stored->original['data']['id'],
+                    'proof_payment_id' => empty($request->proofPayments) ? 1 : $payment['value'],
+                    'td_pr_desc' => empty($request->proofPayments) ? 1 : ($payment['value'] === 1 ? 'Efectivo' : $request->proofPayments[0]['td_pr_desc']),
+                ]);
+                $till_detail_proof_payments_stored = $till_detail_proof_payments->store($till_detail_proof_payments_data);
+                if ($till_detail_proof_payments_stored) {
+                    continue;
+                } else {
+                    DB::rollBack();
+                    throw new \Exception('No se pudo guardar el tipo de pago de un detalle de caja.');
+                }
+            }
             DB::commit();
             $something = [];
             return $this->showAfterAction($something, 'create', 201);
