@@ -5,7 +5,7 @@ namespace App\Rules;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
-class ValidProofPayments implements ValidationRule
+class ValidPurchaseProofPayments implements ValidationRule
 {
     /**
      * Run the validation rule.
@@ -22,10 +22,10 @@ class ValidProofPayments implements ValidationRule
         $data = request()->all();
 
         // Calcular total de la venta (sumar precio * cantidad de cada detalle)
-        $totalVenta = collect($data['sale_details'] ?? [])
+        $totalCompra = collect($data['purchase_details'] ?? [])
             ->sum(
                 fn($detalle) =>
-                ($detalle['sd_amount'] ?? 0) * ($detalle['sd_qty'] ?? 0)
+                ($detalle['pd_amount'] ?? 0) * ($detalle['pd_qty'] ?? 0)
             );
 
         // Calcular total de pagos
@@ -33,7 +33,7 @@ class ValidProofPayments implements ValidationRule
             ->sum(fn($pago) => intval($pago['amount']) ?? 0);
 
         // Validar que los pagos cubran el total
-        if ($totalPagos < $totalVenta) {
+        if ($totalPagos < $totalCompra) {
             $fail('La suma de los tipos de pago no puede ser menor al total de la venta.');
         }
     }

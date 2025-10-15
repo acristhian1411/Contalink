@@ -46,8 +46,6 @@ class SaleStoreController extends ApiController
                     ];
                 })->toArray()
             ]);
-            $products = new ProductsController;
-            $update = $products->updatePriceAndQty($product_data);
             // Log::alert($update);
             $Sales = new SalesController;
             $sale_data = new Request([
@@ -90,7 +88,7 @@ class SaleStoreController extends ApiController
                 $till_detail_proof_payments_data = new Request([
                     'till_detail_id' => $till_detail_stored->original['data']['id'],
                     'proof_payment_id' => empty($request->proofPayments) ? 1 : $payment['value'],
-                    'td_pr_desc' => empty($request->proofPayments) ? 1 : ($payment['value'] === 1 ? 'Efectivo' : $request->proofPayments[0]['td_pr_desc']),
+                    'td_pr_desc' => empty($request->proofPayments) ? 1 : ($payment['value'] === 1 ? 'Efectivo' : $payment['td_pr_desc']),
                 ]);
                 $till_detail_proof_payments_stored = $till_detail_proof_payments->store($till_detail_proof_payments_data);
                 if ($till_detail_proof_payments_stored) {

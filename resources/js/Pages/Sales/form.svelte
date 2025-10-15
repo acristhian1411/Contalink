@@ -487,7 +487,6 @@
                 placeholder="Seleccione los tipos de pago"
                 on:change={handleChangePaymentType}
             />
-            <!-- svelte-ignore a11y-label-has-associated-control -->
             <label for="paymentTypes">
                 {#if errors?.proofPayments}
                     <span class="mt-2 text-base text-red-500 block"
