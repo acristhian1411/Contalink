@@ -7,6 +7,7 @@ use Spatie\Permission\Models\Role;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
 
 class AssignPermissionSeeder extends Seeder
 {
@@ -20,5 +21,7 @@ class AssignPermissionSeeder extends Seeder
         foreach ($permissions as $permission) {
             $role->givePermissionTo($permission->name);
         }
+        $user = User::find(0);
+        $user->assignRole('Root');
     }
 }

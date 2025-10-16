@@ -102,6 +102,7 @@ class CountrySeeder extends Seeder
                     Cities::firstOrCreate([
                         'city_name' => $cityName, 
                         'state_id' => $state->id, 
+                        'city_code'=>'',
                         'created_at' => now(), 
                         'updated_at' => now()
                     ]);
