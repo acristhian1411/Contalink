@@ -294,7 +294,7 @@
                 purchase_details: purchaseDetails.map((x) => ({
                     product_id: x.id,
                     pd_qty: x.quantity,
-                    pd_amount: x.product_selling_price,
+                    pd_amount: x.product_cost_price,
                 })),
                 proofPayments: proofPaymentTypes,
             });
@@ -579,15 +579,15 @@
                         <Textfield
                             label=""
                             type="number"
-                            bind:value={item.product_selling_price}
-                            errors={errors?.product_selling_price
-                                ? { message: errors.product_selling_price[0] }
+                            bind:value={item.product_cost_price}
+                            errors={errors?.product_cost_price
+                                ? { message: errors.product_cost_price[0] }
                                 : null}
                         />
                     </td>
                     <td class="text-center"
                         >{formatNumber(
-                            parseInt(item.product_selling_price) *
+                            parseInt(item.product_cost_price) *
                                 item.quantity,
                         )}</td
                     >
@@ -610,7 +610,7 @@
                                     purchaseDetails.reduce(
                                         (acc, curr) =>
                                             acc +
-                                            curr.product_selling_price *
+                                            curr.product_cost_price *
                                                 curr.quantity,
                                         0,
                                     ),
@@ -635,7 +635,7 @@
                                     .reduce(
                                         (acc, curr) =>
                                             acc +
-                                            curr.product_selling_price *
+                                            curr.product_cost_price *
                                                 curr.quantity,
                                         0,
                                     )

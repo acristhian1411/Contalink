@@ -22,8 +22,10 @@ class PurchasesDetails extends Model implements AuditableContract
         'pd_amount'
     ];
 
-    public function purchase()
-    {
+    public function purchase(){
         return $this->belongsTo(Purchases::class, 'purchase_id', 'id');
+    }
+    public function product(){
+        return $this->belongsTo(Products::class, 'product_id', 'id');
     }
 }

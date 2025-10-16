@@ -47,4 +47,8 @@ class Products extends Model implements AuditableContract
         return $this->hasMany(SalesDetails::class,'product_id','id');
     }
 
+    public function purchaseDetails(){
+        return $this->hasMany(PurchasesDetails::class,'product_id','id');
+    }
+
 }
