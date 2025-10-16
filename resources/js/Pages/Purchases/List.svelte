@@ -75,7 +75,7 @@
                 authorization: `token: ${token}`,
             },
         };
-        axios.delete(`${appUrl}/api/purchases/${id}`, config).then((res) => {
+        axios.delete(`${appUrl}/api/deletepurchases/${id}`, config).then((res) => {
             let detail = {
                 detail: {
                     type: 'delete',
@@ -156,7 +156,11 @@
 {/if}
 {#if openDeleteModal}
     <dialog class="modal modal-open">
-        <DeleteModal on:close={closeDeleteModal} on:confirm={deleteRecord} />
+        <DeleteModal 
+            on:close={closeDeleteModal} 
+            on:confirm={deleteRecord} 
+            message="¿Estás seguro de que deseas eliminar esta compra? Esta acción actualizará el inventario."
+        />
     </dialog>
 {/if}
 {#if _new}

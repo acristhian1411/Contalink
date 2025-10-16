@@ -24,6 +24,7 @@ use App\Http\Controllers\Sales\SaleStoreController;
 use App\Http\Controllers\Sales\SaleDeleteController;
 use App\Http\Controllers\Purchases\PurchasesController;
 use App\Http\Controllers\Purchases\PurchasesReportController;
+use App\Http\Controllers\Purchases\PurchaseDeleteController;
 use App\Http\Controllers\PurchasesDetails\PurchasesDetailsController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Roles\RolesController;
@@ -215,6 +216,7 @@ Route::get('purchases/{id}', [PurchasesController::class, 'show'])->whereNumber(
 Route::get('purchases/report', [PurchasesReportController::class, 'getPurchasesReport']);
 Route::get('purchases/report/pdf', [PurchasesReportController::class, 'getPurchasesReport']);
 Route::delete('purchases/{id}', [PurchasesController::class, 'destroy']);
+Route::delete('deletepurchases/{id}', [PurchaseDeleteController::class, 'destroy']);
 //routes for PurchasesDetails
 Route::get('purchasesdetails', [PurchasesDetailsController::class, 'index']);
 Route::post('purchasesdetails', [PurchasesDetailsController::class, 'store']);
