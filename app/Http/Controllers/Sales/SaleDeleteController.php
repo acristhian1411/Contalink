@@ -214,7 +214,9 @@ class SaleDeleteController extends ApiController
         }
         
         // Validate that sale has till movements (a sale should have payment records)
-        $tillDetailsCount = TillDetails::where('ref_id', $saleId)->whereNull('deleted_at')->count();
+        $tillDetailsCount = TillDetails::where('ref_id', $saleId)
+        ->whereRaw("td_desc ILIKE ?", ['%venta%'])
+        ->whereNull('deleted_at')->count();
         if ($tillDetailsCount === 0) {
             Log::error("Sale has no till movements associated", [
                 'sale_id' => $saleId,
@@ -305,6 +307,7 @@ class SaleDeleteController extends ApiController
         
         // Validate that till details reference valid tills
         $invalidTills = TillDetails::where('ref_id', $saleId)
+            ->whereRaw("td_desc ILIKE ?", ['%venta%'])
             ->whereNull('deleted_at')
             ->whereDoesntHave('till', function($query) {
                 $query->whereNull('deleted_at');
@@ -572,7 +575,6 @@ class SaleDeleteController extends ApiController
         try {
             // Find all TillDetails records associated with the sale
             $tillDetails = $this->getTillDetailsForSale($saleId);
-            
             if (empty($tillDetails)) {
                 Log::error("No till movements found for sale", ['sale_id' => $saleId]);
                 throw new \Exception("No se encontraron movimientos de caja para la venta");
@@ -669,6 +671,7 @@ class SaleDeleteController extends ApiController
     private function getTillDetailsForSale($saleId)
     {
         return TillDetails::where('ref_id', $saleId)
+            ->whereRaw("td_desc ILIKE ?", ['%venta%'])
             ->whereNull('deleted_at')
             ->select('id', 'till_id', 'ref_id', 'td_desc', 'td_amount')
             ->get()
@@ -826,6 +829,7 @@ class SaleDeleteController extends ApiController
     {
         // Check that no active till details remain for this sale
         $remainingTillDetails = TillDetails::where('ref_id', $saleId)
+            ->whereRaw("td_desc ILIKE ?", ['%venta%'])
             ->whereNull('deleted_at')
             ->count();
             
