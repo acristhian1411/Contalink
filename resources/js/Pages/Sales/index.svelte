@@ -77,7 +77,7 @@
                 authorization: `token: ${token}`,
             },
         };
-        axios.delete(`${appUrl}/api/sales/${id}`, config).then((res) => {
+        axios.delete(`${appUrl}/api/deletesale/${id}`, config).then((res) => {
             let detail = {
                 detail: {
                     type: "delete",

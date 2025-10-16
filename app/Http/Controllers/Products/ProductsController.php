@@ -106,6 +106,8 @@ class ProductsController extends ApiController
                     $product->product_quantity += intval($value['product_quantity']);
                 }else if($req->controller == 'sales'){
                     $product->product_quantity -= intval($value['product_quantity']);
+                }else if($req->controller == 'sales_reversal'){
+                    $product->product_quantity += intval($value['product_quantity']);
                 }
                 $product->save();
             }

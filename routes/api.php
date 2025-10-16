@@ -21,6 +21,7 @@ use App\Http\Controllers\Sales\SalesController;
 use App\Http\Controllers\Sales\SalesReportController;
 use App\Http\Controllers\SalesDetails\SalesDetailsController;
 use App\Http\Controllers\Sales\SaleStoreController;
+use App\Http\Controllers\Sales\SaleDeleteController;
 use App\Http\Controllers\Purchases\PurchasesController;
 use App\Http\Controllers\Purchases\PurchasesReportController;
 use App\Http\Controllers\PurchasesDetails\PurchasesDetailsController;
@@ -190,6 +191,7 @@ Route::delete('proofpaypments/{id}', [ProofPaymentsController::class, 'destroy']
 Route::get('sales', [SalesController::class, 'index']);
 Route::post('sales', [SalesController::class, 'store']);
 Route::post('storesale', [SaleStoreController::class, 'store']);
+Route::delete('deletesale/{id}', [SaleDeleteController::class, 'destroy'])->whereNumber('id')->description('Delete a complete sale with stock and till reversal.');
 Route::put('sales/{id}', [SalesController::class, 'update']);
 Route::get('sales/{id}', [SalesController::class, 'show'])->whereNumber('id');
 Route::get('salesByNumber/{searchTerm}', [SalesController::class, 'searchByNumber']);
