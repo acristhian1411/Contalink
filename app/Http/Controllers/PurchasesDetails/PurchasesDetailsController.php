@@ -11,7 +11,7 @@ class PurchasesDetailsController extends ApiController
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
@@ -30,7 +30,7 @@ class PurchasesDetailsController extends ApiController
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
@@ -86,7 +86,7 @@ class PurchasesDetailsController extends ApiController
      * Display the specified resource.
      *
      * @param  \App\Models\PurchasesDetails  $purchasesDetails
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show($id)
     {
@@ -104,7 +104,7 @@ class PurchasesDetailsController extends ApiController
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\PurchasesDetails  $purchasesDetails
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
@@ -135,7 +135,7 @@ class PurchasesDetailsController extends ApiController
      * Remove the specified resource from storage.
      *
      * @param  \App\Models\PurchasesDetails  $purchasesDetails
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {

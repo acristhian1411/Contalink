@@ -13,7 +13,7 @@ class ProductsController extends ApiController
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
@@ -37,7 +37,7 @@ class ProductsController extends ApiController
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request): JsonResponse
     {
@@ -70,7 +70,7 @@ class ProductsController extends ApiController
      * Display the specified resource.
      *
      * @param  \App\Models\Products  $products
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function show($id)
     {
@@ -108,6 +108,8 @@ class ProductsController extends ApiController
                     $product->product_quantity -= intval($value['product_quantity']);
                 }else if($req->controller == 'sales_reversal'){
                     $product->product_quantity += intval($value['product_quantity']);
+                }else if($req->controller == 'purchases_reversal'){
+                    $product->product_quantity -= intval($value['product_quantity']);
                 }
                 $product->save();
             }
@@ -141,7 +143,7 @@ class ProductsController extends ApiController
      *
      * @param  \Illuminate\Http\Request  $request the fields that will be updated
      * @param  int $id the id of the product
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request,int $id): JsonResponse
     {
@@ -175,7 +177,7 @@ class ProductsController extends ApiController
      * Remove the specified resource from storage.
      *
      * @param  \App\Models\Products  $products
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
