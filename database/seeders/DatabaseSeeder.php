@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             IvaTypeSeeder::class,
             PersonTypeSeeder::class,
+            MeasurementUnitsSeeder::class,
             PermissionsSeeder::class,
             PersonSeeder::class,
             RoleSeeder::class,

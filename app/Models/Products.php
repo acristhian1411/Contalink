@@ -24,6 +24,7 @@ class Products extends Model implements AuditableContract
         'category_id',
         'iva_type_id',
         'brand_id',
+        'measurement_unit_id',
     ];
 
 
@@ -49,6 +50,39 @@ class Products extends Model implements AuditableContract
 
     public function purchaseDetails(){
         return $this->hasMany(PurchasesDetails::class,'product_id','id');
+    }
+
+    public function measurementUnit()
+    {
+        return $this->belongsTo(MeasurementUnit::class)->withDefault([
+            'unit_name' => 'Unidad',
+            'unit_abbreviation' => 'u',
+            'allows_decimals' => false
+        ]);
+    }
+
+    /**
+     * Accessor para obtener el nombre de la unidad de medida
+     */
+    public function getUnitNameAttribute()
+    {
+        return $this->measurementUnit->unit_name;
+    }
+
+    /**
+     * Accessor para obtener la abreviación de la unidad de medida
+     */
+    public function getUnitAbbreviationAttribute()
+    {
+        return $this->measurementUnit->unit_abbreviation;
+    }
+
+    /**
+     * Accessor para verificar si la unidad permite decimales
+     */
+    public function getAllowsDecimalsAttribute()
+    {
+        return $this->measurementUnit->allows_decimals;
     }
 
 }

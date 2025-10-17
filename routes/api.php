@@ -33,6 +33,7 @@ use App\Http\Controllers\Users\UsersController;
 use App\Http\Controllers\Brands\BrandController;
 use App\Http\Controllers\ContactTypes\ContactTypesController;
 use App\Http\Controllers\Purchases\PurchaseStoreController;
+use App\Http\Controllers\MeasurementUnits\MeasurementUnitsController;
 use App\Http\Controllers\TillsProcess\TillsProcessController;
 use App\Http\Controllers\TillsTransfers\TillsTransfersController;
 use App\Http\Controllers\Refunds\RefundsController;
@@ -245,5 +246,15 @@ Route::post('contacttypes', [ContactTypesController::class, 'store']);
 Route::put('contacttypes/{id}', [ContactTypesController::class, 'update']);
 Route::get('contacttypes/{id}', [ContactTypesController::class, 'show']);
 Route::delete('contacttypes/{id}', [ContactTypesController::class, 'destroy']);
+
+// routes for MeasurementUnits
+Route::get('measurement-units', [MeasurementUnitsController::class, 'index'])->description('Get list of measurement units with pagination.');
+Route::get('measurement-units/active', [MeasurementUnitsController::class, 'active'])->description('Get list of active measurement units.');
+Route::post('measurement-units', [MeasurementUnitsController::class, 'store'])->description('Store a new measurement unit.');
+Route::get('measurement-units/{id}', [MeasurementUnitsController::class, 'show'])->description('Show a measurement unit.');
+Route::put('measurement-units/{id}', [MeasurementUnitsController::class, 'update'])->description('Update a measurement unit.');
+Route::delete('measurement-units/{id}', [MeasurementUnitsController::class, 'destroy'])->description('Delete a measurement unit.');
+Route::patch('measurement-units/{id}/activate', [MeasurementUnitsController::class, 'activate'])->description('Activate a measurement unit.');
+Route::patch('measurement-units/{id}/deactivate', [MeasurementUnitsController::class, 'deactivate'])->description('Deactivate a measurement unit.');
 
 

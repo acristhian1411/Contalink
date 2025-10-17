@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Products;
 
 use App\Models\Products;
+use App\Models\MeasurementUnit;
+use App\Validators\QuantityValidator;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ApiController;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +26,11 @@ class ProductsController extends ApiController
             $datos = $query->join('categories','products.category_id','=','categories.id')
             ->join('iva_types','products.iva_type_id','=','iva_types.id')
             ->join('brands','products.brand_id','=', 'brands.id')
-            ->select('products.*','iva_types.iva_type_desc','iva_types.iva_type_percent','categories.cat_desc', 'brands.brand_name')
+            ->leftJoin('measurement_units','products.measurement_unit_id','=','measurement_units.id')
+            ->select('products.*','iva_types.iva_type_desc','iva_types.iva_type_percent',
+                     'categories.cat_desc', 'brands.brand_name',
+                     'measurement_units.unit_name', 'measurement_units.unit_abbreviation',
+                     'measurement_units.allows_decimals')
             ->get();
             $from = request()->wantsJson() ? 'api' : 'web';
             return $this->showAll($datos,$from,'Products/index', 200);
@@ -46,14 +52,33 @@ class ProductsController extends ApiController
                 'product_name' => 'required|string|max:255',
                 'product_desc' => 'nullable|string',
                 'product_cost_price' => 'required|numeric|min:0',
-                'product_quantity' => 'required|integer|min:0',
+                'product_quantity' => 'required|numeric|min:0',
                 'product_selling_price' => 'required|numeric|min:0',
                 'category_id' => 'required',
                 'iva_type_id' => 'required',
                 'brand_id' => 'required',
+                'measurement_unit_id' => 'nullable|exists:measurement_units,id',
             ];
+            
             $request->validate($rules);
+            
+            // Validar cantidad según la unidad de medida
+            if ($request->has('measurement_unit_id') && $request->measurement_unit_id) {
+                $unit = MeasurementUnit::find($request->measurement_unit_id);
+                if ($unit && !QuantityValidator::validate($request->product_quantity, $unit)) {
+                    $errorMessage = QuantityValidator::getErrorMessage($request->product_quantity, $unit);
+                    return response()->json([
+                        'error' => $errorMessage,
+                        'message' => 'La cantidad no es válida para la unidad de medida seleccionada'
+                    ], 422);
+                }
+            }
+            
             $products = Products::create($request->all());
+            
+            // Cargar la relación de unidad de medida para la respuesta
+            $products->load('measurementUnit');
+            
             return response()->json(['message'=>'Registro creado con exito','data'=>$products]);
         }catch(\Illuminate\Validation\ValidationException $e){
             return response()->json([
@@ -79,6 +104,11 @@ class ProductsController extends ApiController
             ->join('categories','products.category_id','=','categories.id')
             ->join('iva_types','products.iva_type_id','=','iva_types.id')
             ->join('brands','products.brand_id','=','brands.id')
+            ->leftJoin('measurement_units','products.measurement_unit_id','=','measurement_units.id')
+            ->select('products.*','iva_types.iva_type_desc','iva_types.iva_type_percent',
+                     'categories.cat_desc', 'brands.brand_name',
+                     'measurement_units.unit_name', 'measurement_units.unit_abbreviation',
+                     'measurement_units.allows_decimals')
             ->first();
             $audits = $product->audits;
             if(request()->wantsJson()){
@@ -99,17 +129,29 @@ class ProductsController extends ApiController
                 'details.*.product_quantity'=> 'required|numeric',
             ];
             $req->validate($rules);
+            
             foreach ($req->details as $key => $value) {
-                $product = Products::findOrFail($value['id']);
+                $product = Products::with('measurementUnit')->findOrFail($value['id']);
+                
+                // Validar cantidad según la unidad de medida
+                if ($product->measurementUnit && !QuantityValidator::validate($value['product_quantity'], $product->measurementUnit)) {
+                    $errorMessage = QuantityValidator::getErrorMessage($value['product_quantity'], $product->measurementUnit);
+                    throw new \Exception("Producto {$product->product_name}: {$errorMessage}");
+                }
+                
                 $product->product_cost_price = $value['product_cost_price'];
+                
+                // Usar el valor decimal directamente en lugar de intval para soportar unidades decimales
+                $quantity = floatval($value['product_quantity']);
+                
                 if($req->controller == 'purchase'){
-                    $product->product_quantity += intval($value['product_quantity']);
+                    $product->product_quantity += $quantity;
                 }else if($req->controller == 'sales'){
-                    $product->product_quantity -= intval($value['product_quantity']);
+                    $product->product_quantity -= $quantity;
                 }else if($req->controller == 'sales_reversal'){
-                    $product->product_quantity += intval($value['product_quantity']);
+                    $product->product_quantity += $quantity;
                 }else if($req->controller == 'purchases_reversal'){
-                    $product->product_quantity -= intval($value['product_quantity']);
+                    $product->product_quantity -= $quantity;
                 }
                 $product->save();
             }
@@ -152,15 +194,33 @@ class ProductsController extends ApiController
                 'product_name' => 'required|string|max:255',
                 'product_desc' => 'required|string',
                 'product_cost_price' => 'required|numeric|min:0',
-                'product_quantity' => 'required|integer|min:0',
+                'product_quantity' => 'required|numeric|min:0',
                 'product_selling_price' => 'required|numeric|min:0',
                 'category_id' => 'required|integer',
                 'iva_type_id' => 'required|integer',
-                'brand_id' => 'required|integer'
+                'brand_id' => 'required|integer',
+                'measurement_unit_id' => 'nullable|exists:measurement_units,id'
             ];
             $request->validate($reglas);
+            
+            // Validar cantidad según la unidad de medida
+            if ($request->has('measurement_unit_id') && $request->measurement_unit_id) {
+                $unit = MeasurementUnit::find($request->measurement_unit_id);
+                if ($unit && !QuantityValidator::validate($request->product_quantity, $unit)) {
+                    $errorMessage = QuantityValidator::getErrorMessage($request->product_quantity, $unit);
+                    return response()->json([
+                        'error' => $errorMessage,
+                        'message' => 'La cantidad no es válida para la unidad de medida seleccionada'
+                    ], 422);
+                }
+            }
+            
             $products = Products::findOrFail($id);
             $products->update($request->all());
+            
+            // Cargar la relación de unidad de medida para la respuesta
+            $products->load('measurementUnit');
+            
             return response()->json(['message'=>'Registro Actualizado con exito','data'=>$products]);
         }catch(\Illuminate\Validation\ValidationException $e){
             return response()->json([
