@@ -13,6 +13,8 @@ use App\Http\Controllers\Tills\TillsController;
 use App\Http\Controllers\Products\ProductsController;
 use Illuminate\Support\Collection;
 use App\Http\Requests\PurchaseStoreRequest;
+use App\Models\Products;
+use App\Validators\QuantityValidator;
 class PurchaseStoreController extends ApiController
 {
     /**
@@ -42,6 +44,30 @@ class PurchaseStoreController extends ApiController
     {
         try {
             DB::beginTransaction();
+            
+            // Validar cantidades según unidades de medida de cada producto
+            foreach ($request->purchase_details as $detail) {
+                $product = Products::with('measurementUnit')->find($detail['product_id']);
+                
+                if (!$product) {
+                    return response()->json([
+                        'error' => "Producto con ID {$detail['product_id']} no encontrado",
+                        'message' => 'Producto no encontrado'
+                    ], 400);
+                }
+                
+                $quantity = $detail['pd_qty'];
+                $unit = $product->measurementUnit;
+                
+                if (!QuantityValidator::validate($quantity, $unit)) {
+                    $errorMessage = QuantityValidator::getErrorMessage($quantity, $unit);
+                    return response()->json([
+                        'error' => "Error en producto '{$product->product_name}': {$errorMessage}",
+                        'message' => 'Cantidad inválida para la unidad de medida del producto'
+                    ], 400);
+                }
+            }
+            
             $tills = new TillsController;
             $till_data = new Request([
                 'fromController' => true

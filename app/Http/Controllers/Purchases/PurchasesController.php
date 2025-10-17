@@ -21,8 +21,30 @@ class PurchasesController extends ApiController
             $query = Purchases::query();
             $query = $this->filterData($query, $t);
             $datos = $query
-            ->with('person')
+            ->with([
+                'person',
+                'purchaseDetails.product.measurementUnit'
+            ])
             ->get();
+            
+            // Agregar información de unidades de medida a cada compra
+            $datos->each(function ($purchase) {
+                if ($purchase->purchaseDetails) {
+                    $purchase->purchaseDetails->each(function ($detail) {
+                        if ($detail->product && $detail->product->measurementUnit) {
+                            $detail->unit_name = $detail->product->measurementUnit->unit_name;
+                            $detail->unit_abbreviation = $detail->product->measurementUnit->unit_abbreviation;
+                            $detail->allows_decimals = $detail->product->measurementUnit->allows_decimals;
+                        } else {
+                            // Fallback para productos sin unidad asignada
+                            $detail->unit_name = 'Unidad';
+                            $detail->unit_abbreviation = 'u';
+                            $detail->allows_decimals = false;
+                        }
+                    });
+                }
+            });
+            
             return $this->showAll($datos, 'api','',200);
         }catch(\Exception $e){   
             return response()->json(['error' => $e->getMessage(), 'message'=>'Ocurrió un error mientras se obtenían los datos'],500);
@@ -69,7 +91,31 @@ class PurchasesController extends ApiController
     public function show($id)
     {
         try{
-            $purchases = Purchases::find($id);
+            $purchases = Purchases::with([
+                'person',
+                'purchaseDetails.product.measurementUnit'
+            ])->find($id);
+            
+            if (!$purchases) {
+                return response()->json(['error' => 'Compra no encontrada', 'message' => 'La compra especificada no existe'], 404);
+            }
+            
+            // Agregar información de unidades de medida a los detalles de compra
+            if ($purchases->purchaseDetails) {
+                $purchases->purchaseDetails->each(function ($detail) {
+                    if ($detail->product && $detail->product->measurementUnit) {
+                        $detail->unit_name = $detail->product->measurementUnit->unit_name;
+                        $detail->unit_abbreviation = $detail->product->measurementUnit->unit_abbreviation;
+                        $detail->allows_decimals = $detail->product->measurementUnit->allows_decimals;
+                    } else {
+                        // Fallback para productos sin unidad asignada
+                        $detail->unit_name = 'Unidad';
+                        $detail->unit_abbreviation = 'u';
+                        $detail->allows_decimals = false;
+                    }
+                });
+            }
+            
             $audits = $purchases->audits;
             if(request()->wantsJson()){
                 return $this->showOne($purchases,$audits, 200);
