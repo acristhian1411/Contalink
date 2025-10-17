@@ -23,11 +23,11 @@ class RefundDetails extends Model implements AuditableContract
 
     public function refund()
     {
-        return $this->belongsTo(Refund::class);
+        return $this->belongsTo(Refunds::class);
     }
 
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Products::class);
     }
 }

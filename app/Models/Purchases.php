@@ -28,4 +28,9 @@ class Purchases extends Model implements AuditableContract
         return $this->belongsTo(Persons::class);
     }
 
+    public function purchaseDetails()
+    {
+        return $this->hasMany(PurchasesDetails::class, 'purchase_id', 'id');
+    }
+
 }

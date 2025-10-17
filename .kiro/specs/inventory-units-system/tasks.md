@@ -1,49 +1,91 @@
 # Plan de Implementación - Sistema de Unidades de Inventario
 
-- [ ] 1. Crear estructura base del sistema de unidades de medida
+- [x] 1. Crear estructura base del sistema de unidades de medida
+
+
+
+
+
+
   - Crear migración para tabla `measurement_units` con campos requeridos
   - Crear modelo `MeasurementUnit` con relaciones y validaciones
   - Insertar datos predefinidos de unidades comunes (Unidad, Kilogramo, Litro, etc.)
   - _Requisitos: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 2. Integrar unidades de medida con el modelo de productos
+- [x] 2. Integrar unidades de medida con el modelo de productos
+
+
+
+
+
+
   - Crear migración para agregar columna `measurement_unit_id` a tabla `products`
   - Modificar modelo `Products` para incluir relación con `MeasurementUnit`
   - Implementar accessors para obtener información de unidad con fallback a "Unidad"
   - _Requisitos: 2.1, 2.2, 2.4_
 
-- [ ] 3. Implementar controlador de gestión de unidades de medida
+- [x] 3. Implementar controlador de gestión de unidades de medida
+
+
+
+
+
   - Crear `MeasurementUnitsController` con operaciones CRUD completas
   - Implementar validaciones para nombres únicos y datos requeridos
   - Agregar endpoints para activar/desactivar unidades sin eliminarlas
   - _Requisitos: 1.1, 1.4_
 
-- [ ] 4. Actualizar controlador de productos para soporte de unidades
+- [x] 4. Actualizar controlador de productos para soporte de unidades
+
+
+
+
+
   - Modificar `ProductsController::index()` para incluir información de unidades en consultas
   - Actualizar `ProductsController::store()` para validar y asignar unidades de medida
   - Modificar `ProductsController::update()` para permitir cambios de unidad de medida
   - Implementar validación de cantidades según tipo de unidad (enteras vs decimales)
   - _Requisitos: 2.1, 2.2, 2.3, 2.5_
 
-- [ ] 5. Adaptar sistema de ventas para manejar unidades de medida
+- [x] 5. Adaptar sistema de ventas para manejar unidades de medida
+
+
+
+
   - Modificar `SaleStoreController` para validar cantidades según unidad del producto
   - Actualizar `SalesController::show()` para incluir información de unidades en respuestas
   - Modificar `ProductsController::updatePriceAndQty()` para manejar cantidades con unidades
   - _Requisitos: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 6. Adaptar sistema de compras para manejar unidades de medida
+- [x] 6. Adaptar sistema de compras para manejar unidades de medida
+
+
+
+
+
   - Modificar `PurchaseStoreController` para validar cantidades según unidad del producto
   - Actualizar `PurchasesController::show()` para incluir información de unidades
   - Asegurar que las compras actualicen inventario correctamente con unidades
   - _Requisitos: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 7. Adaptar sistema de devoluciones para manejar unidades de medida
+- [x] 7. Adaptar sistema de devoluciones para manejar unidades de medida
+
+
+
+
+
+
   - Modificar controladores de `Refunds` para mostrar unidades en detalles de devolución
   - Validar que cantidades devueltas no excedan cantidades originales por unidad
   - Actualizar inventario correctamente al procesar devoluciones con unidades
   - _Requisitos: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 8. Actualizar sistema de eliminación de ventas para unidades de medida
+- [x] 8. Actualizar sistema de eliminación de ventas para unidades de medida
+
+
+
+
+
   - Modificar `SaleDeleteController::reverseProductStock()` para manejar diferentes unidades
   - Asegurar que la reversión de stock funcione correctamente con cantidades decimales
   - Validar que las operaciones matemáticas sean precisas para diferentes tipos de unidades

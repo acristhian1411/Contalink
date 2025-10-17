@@ -24,6 +24,11 @@ class Refunds extends Model implements AuditableContract
 
     public function sale()
     {
-        return $this->belongsTo(Sale::class);
+        return $this->belongsTo(Sales::class);
+    }
+
+    public function refundDetails()
+    {
+        return $this->hasMany(RefundDetails::class, 'refund_id', 'id');
     }
 }

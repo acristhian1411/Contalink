@@ -15,7 +15,7 @@ class RefundDetailsController extends ApiController
     {
         try{
             $t = RefundDetails::query()->first();
-            $query = RefundDetails::query();
+            $query = RefundDetails::with('product.measurementUnit');
             $query = $this->filterData($query, $t);
             $datos = $query->get();
             return $this->showAll($datos, 200);
@@ -44,9 +44,19 @@ class RefundDetailsController extends ApiController
             $rules = [
                 'refund_id' => 'required',
                 'product_id' => 'required',
-                'quantity' => 'required',
+                'quantity' => 'required|numeric|min:0.01',
             ];
             $request->validate($rules);
+
+            // Get product with measurement unit for validation
+            $product = \App\Models\Products::with('measurementUnit')->findOrFail($request->product_id);
+            
+            // Validate quantity according to measurement unit
+            if ($product->measurementUnit && !\App\Validators\QuantityValidator::validate($request->quantity, $product->measurementUnit)) {
+                $errorMessage = \App\Validators\QuantityValidator::getErrorMessage($request->quantity, $product->measurementUnit);
+                throw new \Exception("Producto {$product->product_name}: {$errorMessage}");
+            }
+
             $refundDetails = RefundDetails::create($request->all());
             return response()->json(['message'=>'Registro creado con exito','data'=>$refundDetails],201);
         }
@@ -88,7 +98,7 @@ class RefundDetailsController extends ApiController
     public function show(int $id)
     {
         try{
-            $refundDetails = RefundDetails::findOrFail($id);
+            $refundDetails = RefundDetails::with('product.measurementUnit')->findOrFail($id);
             $audits = $refundDetails->audits;
             return $this->showOne($refundDetails,$audits,200);
         }catch(\Exception $e){
@@ -110,16 +120,38 @@ class RefundDetailsController extends ApiController
     public function update(Request $request, int $id)
     {
         try{
+            \Illuminate\Support\Facades\DB::beginTransaction();
+            
             $rules = [
                 'refund_id' => 'required',
                 'product_id' => 'required',
-                'quantity' => 'required',
+                'quantity' => 'required|numeric|min:0.01',
             ];
             $request->validate($rules);
-            $refundDetails = RefundDetails::findOrFail($id);
+
+            // Get current refund detail with product
+            $refundDetails = RefundDetails::with('product.measurementUnit')->findOrFail($id);
+            $oldQuantity = $refundDetails->quantity;
+            
+            // Get product with measurement unit for validation
+            $product = \App\Models\Products::with('measurementUnit')->findOrFail($request->product_id);
+            
+            // Validate quantity according to measurement unit
+            if ($product->measurementUnit && !\App\Validators\QuantityValidator::validate($request->quantity, $product->measurementUnit)) {
+                $errorMessage = \App\Validators\QuantityValidator::getErrorMessage($request->quantity, $product->measurementUnit);
+                throw new \Exception("Producto {$product->product_name}: {$errorMessage}");
+            }
+
+            // Update inventory: reverse old quantity and apply new quantity
+            $quantityDifference = $request->quantity - $oldQuantity;
+            $product->increment('product_quantity', $quantityDifference);
+
             $refundDetails->update($request->all());
+            
+            \Illuminate\Support\Facades\DB::commit();
             return response()->json(['message'=>'Registro Actualizado con exito','data'=>$refundDetails],200);
         }catch(\Illuminate\Validation\ValidationException $e){
+            \Illuminate\Support\Facades\DB::rollBack();
             return response()->json([
                 'error'=>$e->getMessage(),
                 'message'=>'Los datos no son correctos',
@@ -127,6 +159,7 @@ class RefundDetailsController extends ApiController
             ],422);
         }
         catch(\Exception $e){
+            \Illuminate\Support\Facades\DB::rollBack();
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo actualizar el registro']);
         }
     }
@@ -137,11 +170,21 @@ class RefundDetailsController extends ApiController
     public function destroy(int $id)
     {
         try{
-            $refundDetails = RefundDetails::findOrFail($id);
+            \Illuminate\Support\Facades\DB::beginTransaction();
+            
+            $refundDetails = RefundDetails::with('product')->findOrFail($id);
+            
+            // Reverse inventory update - subtract the refunded quantity back from inventory
+            $product = $refundDetails->product;
+            $product->decrement('product_quantity', $refundDetails->quantity);
+            
             $refundDetails->delete();
+            
+            \Illuminate\Support\Facades\DB::commit();
             return response()->json(['message'=>'Eliminado con exito']);
         }
         catch(\Exception $e){
+            \Illuminate\Support\Facades\DB::rollBack();
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo eliminar el registro']);
         }
     }
