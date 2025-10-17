@@ -13,6 +13,7 @@ use App\Models\SalesDetails;
 use App\Models\TillDetails;
 use App\Models\TillDetailProofPayments;
 use App\Models\Products;
+use App\Validators\QuantityValidator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -345,16 +346,17 @@ class SaleDeleteController extends ApiController
 
     /**
      * Reverse product stock changes by adding back quantities that were sold
+     * Handles different measurement units and ensures precise mathematical operations
      * 
      * @param int $saleId
      * @throws \Exception
      */
     private function reverseProductStock($saleId)
     {
-        Log::info("Starting stock reversal process", ['sale_id' => $saleId]);
+        Log::info("Starting stock reversal process with measurement units support", ['sale_id' => $saleId]);
         
         try {
-            // Retrieve all sale details with product information
+            // Retrieve all sale details with product and measurement unit information
             $saleDetails = $this->getSaleDetailsForStockReversal($saleId);
             
             if (empty($saleDetails)) {
@@ -362,24 +364,33 @@ class SaleDeleteController extends ApiController
                 throw new \Exception("No se encontraron detalles de venta para revertir el stock");
             }
             
-            Log::info("Retrieved sale details for stock reversal", [
+            Log::info("Retrieved sale details for stock reversal with measurement units", [
                 'sale_id' => $saleId,
-                'details_count' => count($saleDetails)
+                'details_count' => count($saleDetails),
+                'units_summary' => $this->getUnitsReversalSummary($saleDetails)
             ]);
             
-            // Validate products exist and can have stock reversed
+            // Validate products exist and can have stock reversed with their measurement units
             $this->validateProductsForStockReversal($saleDetails);
+            
+            // Validate quantities are compatible with measurement units
+            $this->validateQuantitiesForMeasurementUnits($saleDetails);
             
             // Prepare data for ProductsController updatePriceAndQty method
             $stockReversalData = $this->prepareStockReversalData($saleDetails);
             
-            // Log the stock reversal operation details
-            Log::info("Prepared stock reversal data", [
+            // Log the stock reversal operation details with unit information
+            Log::info("Prepared stock reversal data with measurement units", [
                 'sale_id' => $saleId,
-                'products_to_reverse' => array_map(function($item) {
+                'products_to_reverse' => array_map(function($item) use ($saleDetails) {
+                    $detail = collect($saleDetails)->firstWhere('product_id', $item['id']);
                     return [
                         'product_id' => $item['id'],
+                        'product_name' => $detail['product']['product_name'] ?? 'Unknown',
                         'quantity_to_add' => $item['product_quantity'],
+                        'unit_name' => $detail['product']['measurement_unit']['unit_name'] ?? 'Unidad',
+                        'unit_abbreviation' => $detail['product']['measurement_unit']['unit_abbreviation'] ?? 'u',
+                        'allows_decimals' => $detail['product']['measurement_unit']['allows_decimals'] ?? false,
                         'cost_price' => $item['product_cost_price']
                     ];
                 }, $stockReversalData)
@@ -392,7 +403,7 @@ class SaleDeleteController extends ApiController
                 'fromController' => true
             ]);
             
-            // Call ProductsController to reverse stock
+            // Call ProductsController to reverse stock (already handles measurement units)
             $productsController = new ProductsController();
             $result = $productsController->updatePriceAndQty($request);
             
@@ -407,9 +418,10 @@ class SaleDeleteController extends ApiController
             // Verify stock reversal was successful by checking final quantities
             $this->verifyStockReversalSuccess($saleDetails);
             
-            Log::info("Stock reversal completed successfully", [
+            Log::info("Stock reversal completed successfully with measurement units", [
                 'sale_id' => $saleId,
-                'products_processed' => count($stockReversalData)
+                'products_processed' => count($stockReversalData),
+                'total_units_reversed' => $this->calculateTotalUnitsReversed($saleDetails)
             ]);
             
         } catch (QueryException $e) {
@@ -431,7 +443,7 @@ class SaleDeleteController extends ApiController
     }
 
     /**
-     * Retrieve sale details with product information for stock reversal
+     * Retrieve sale details with product and measurement unit information for stock reversal
      * 
      * @param int $saleId
      * @return array
@@ -440,7 +452,10 @@ class SaleDeleteController extends ApiController
     {
         return SalesDetails::where('sale_id', $saleId)
             ->with(['product' => function($query) {
-                $query->select('id', 'product_cost_price');
+                $query->select('id', 'product_name', 'product_cost_price', 'product_quantity', 'measurement_unit_id')
+                      ->with(['measurementUnit' => function($unitQuery) {
+                          $unitQuery->select('id', 'unit_name', 'unit_abbreviation', 'allows_decimals');
+                      }]);
             }])
             ->select('id', 'product_id', 'sd_qty', 'sd_amount')
             ->get()
@@ -448,7 +463,7 @@ class SaleDeleteController extends ApiController
     }
 
     /**
-     * Validate that products can have their stock reversed
+     * Validate that products can have their stock reversed with measurement unit considerations
      * 
      * @param array $saleDetails
      * @throws \Exception
@@ -482,9 +497,25 @@ class SaleDeleteController extends ApiController
                 ]);
                 throw new \Exception("No se puede revertir stock de producto eliminado ID {$detail['product_id']}");
             }
+            
+            // Validate measurement unit information is available
+            $measurementUnit = $detail['product']['measurement_unit'] ?? null;
+            if (!$measurementUnit) {
+                Log::warning("Product has no measurement unit, using default", [
+                    'product_id' => $detail['product_id'],
+                    'product_name' => $detail['product']['product_name'] ?? 'Unknown'
+                ]);
+            } else {
+                Log::debug("Product measurement unit validated", [
+                    'product_id' => $detail['product_id'],
+                    'product_name' => $detail['product']['product_name'] ?? 'Unknown',
+                    'unit_name' => $measurementUnit['unit_name'],
+                    'allows_decimals' => $measurementUnit['allows_decimals']
+                ]);
+            }
         }
         
-        Log::debug("Products validation passed for stock reversal", [
+        Log::debug("Products validation passed for stock reversal with measurement units", [
             'products_count' => count($saleDetails)
         ]);
     }
@@ -516,7 +547,7 @@ class SaleDeleteController extends ApiController
     }
 
     /**
-     * Verify that stock reversal was successful by checking product quantities
+     * Verify that stock reversal was successful by checking product quantities with measurement unit precision
      * 
      * @param array $saleDetails
      * @throws \Exception
@@ -526,26 +557,47 @@ class SaleDeleteController extends ApiController
         $verificationErrors = [];
         
         foreach ($saleDetails as $detail) {
-            $product = Products::find($detail['product_id']);
+            $product = Products::with('measurementUnit')->find($detail['product_id']);
             
             if (!$product) {
                 $verificationErrors[] = "Producto ID {$detail['product_id']} no encontrado durante verificación";
                 continue;
             }
             
-            // Log the current stock level for audit purposes
-            Log::debug("Stock level after reversal", [
+            $measurementUnit = $product->measurementUnit;
+            $unitName = $measurementUnit ? $measurementUnit->unit_name : 'Unidad';
+            $unitAbbreviation = $measurementUnit ? $measurementUnit->unit_abbreviation : 'u';
+            $allowsDecimals = $measurementUnit ? $measurementUnit->allows_decimals : false;
+            
+            // Log the current stock level for audit purposes with measurement unit info
+            Log::debug("Stock level after reversal with measurement unit", [
                 'product_id' => $detail['product_id'],
+                'product_name' => $product->product_name,
                 'current_quantity' => $product->product_quantity,
-                'reversed_quantity' => $detail['sd_qty']
+                'reversed_quantity' => $detail['sd_qty'],
+                'unit_name' => $unitName,
+                'unit_abbreviation' => $unitAbbreviation,
+                'allows_decimals' => $allowsDecimals,
+                'quantity_display' => $product->product_quantity . ' ' . $unitAbbreviation
             ]);
             
-            // Additional verification could be added here if needed
-            // For example, checking if the stock level is reasonable
+            // Validate that the final quantity precision matches the unit requirements
+            if (!$allowsDecimals && floor($product->product_quantity) != $product->product_quantity) {
+                Log::warning("Product has decimal quantity but unit doesn't allow decimals", [
+                    'product_id' => $detail['product_id'],
+                    'product_name' => $product->product_name,
+                    'current_quantity' => $product->product_quantity,
+                    'unit_name' => $unitName
+                ]);
+            }
+            
+            // Check for negative stock (warning, not error as it might be valid in some cases)
             if ($product->product_quantity < 0) {
                 Log::warning("Product has negative stock after reversal", [
                     'product_id' => $detail['product_id'],
-                    'current_quantity' => $product->product_quantity
+                    'product_name' => $product->product_name,
+                    'current_quantity' => $product->product_quantity,
+                    'unit_display' => $product->product_quantity . ' ' . $unitAbbreviation
                 ]);
             }
         }
@@ -557,9 +609,128 @@ class SaleDeleteController extends ApiController
             throw new \Exception("Errores en verificación de reversión de stock: " . implode(', ', $verificationErrors));
         }
         
-        Log::debug("Stock reversal verification completed successfully", [
+        Log::debug("Stock reversal verification completed successfully with measurement units", [
             'products_verified' => count($saleDetails)
         ]);
+    }
+
+    /**
+     * Validate quantities are compatible with their measurement units
+     * 
+     * @param array $saleDetails
+     * @throws \Exception
+     */
+    private function validateQuantitiesForMeasurementUnits($saleDetails)
+    {
+        foreach ($saleDetails as $detail) {
+            $measurementUnit = $detail['product']['measurement_unit'] ?? null;
+            
+            // If no measurement unit, use default validation (allows decimals = false)
+            if (!$measurementUnit) {
+                $measurementUnit = [
+                    'unit_name' => 'Unidad',
+                    'unit_abbreviation' => 'u',
+                    'allows_decimals' => false
+                ];
+            }
+            
+            $quantity = $detail['sd_qty'];
+            $productName = $detail['product']['product_name'] ?? "ID {$detail['product_id']}";
+            
+            // Validate quantity is positive
+            if (!is_numeric($quantity) || $quantity <= 0) {
+                Log::error("Invalid quantity for measurement unit validation", [
+                    'product_id' => $detail['product_id'],
+                    'product_name' => $productName,
+                    'quantity' => $quantity,
+                    'unit_name' => $measurementUnit['unit_name']
+                ]);
+                throw new \Exception("Cantidad inválida para producto {$productName}: debe ser un número positivo");
+            }
+            
+            // If unit doesn't allow decimals, validate quantity is integer
+            if (!$measurementUnit['allows_decimals'] && floor($quantity) != $quantity) {
+                Log::error("Decimal quantity not allowed for unit", [
+                    'product_id' => $detail['product_id'],
+                    'product_name' => $productName,
+                    'quantity' => $quantity,
+                    'unit_name' => $measurementUnit['unit_name']
+                ]);
+                throw new \Exception("Producto {$productName}: la unidad {$measurementUnit['unit_name']} no permite cantidades decimales");
+            }
+            
+            Log::debug("Quantity validation passed for measurement unit", [
+                'product_id' => $detail['product_id'],
+                'product_name' => $productName,
+                'quantity' => $quantity,
+                'unit_name' => $measurementUnit['unit_name'],
+                'allows_decimals' => $measurementUnit['allows_decimals']
+            ]);
+        }
+        
+        Log::debug("All quantities validated for measurement units", [
+            'products_count' => count($saleDetails)
+        ]);
+    }
+
+    /**
+     * Get summary of units being reversed for logging
+     * 
+     * @param array $saleDetails
+     * @return array
+     */
+    private function getUnitsReversalSummary($saleDetails)
+    {
+        $summary = [];
+        
+        foreach ($saleDetails as $detail) {
+            $measurementUnit = $detail['product']['measurement_unit'] ?? null;
+            $unitName = $measurementUnit ? $measurementUnit['unit_name'] : 'Unidad';
+            
+            if (!isset($summary[$unitName])) {
+                $summary[$unitName] = [
+                    'unit_name' => $unitName,
+                    'unit_abbreviation' => $measurementUnit ? $measurementUnit['unit_abbreviation'] : 'u',
+                    'allows_decimals' => $measurementUnit ? $measurementUnit['allows_decimals'] : false,
+                    'products_count' => 0,
+                    'total_quantity' => 0
+                ];
+            }
+            
+            $summary[$unitName]['products_count']++;
+            $summary[$unitName]['total_quantity'] += $detail['sd_qty'];
+        }
+        
+        return array_values($summary);
+    }
+
+    /**
+     * Calculate total units being reversed across all measurement units
+     * 
+     * @param array $saleDetails
+     * @return array
+     */
+    private function calculateTotalUnitsReversed($saleDetails)
+    {
+        $totals = [];
+        
+        foreach ($saleDetails as $detail) {
+            $measurementUnit = $detail['product']['measurement_unit'] ?? null;
+            $unitName = $measurementUnit ? $measurementUnit['unit_name'] : 'Unidad';
+            $unitAbbreviation = $measurementUnit ? $measurementUnit['unit_abbreviation'] : 'u';
+            
+            if (!isset($totals[$unitName])) {
+                $totals[$unitName] = [
+                    'unit_name' => $unitName,
+                    'unit_abbreviation' => $unitAbbreviation,
+                    'total_quantity' => 0
+                ];
+            }
+            
+            $totals[$unitName]['total_quantity'] += $detail['sd_qty'];
+        }
+        
+        return array_values($totals);
     }
 
     /**

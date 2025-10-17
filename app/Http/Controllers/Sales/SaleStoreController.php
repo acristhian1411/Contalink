@@ -14,6 +14,8 @@ use App\Http\Controllers\Products\ProductsController;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use App\Http\Requests\StoreSalesRequest;
+use App\Models\Products;
+use App\Validators\QuantityValidator;
 class SaleStoreController extends ApiController
 {
     /**
@@ -26,6 +28,28 @@ class SaleStoreController extends ApiController
     {
         try {
             DB::beginTransaction();
+            
+            // Validar cantidades según unidades de medida de cada producto
+            foreach ($request->sale_details as $detail) {
+                $product = Products::with('measurementUnit')->find($detail['product_id']);
+                
+                if (!$product) {
+                    throw new \Exception("Producto con ID {$detail['product_id']} no encontrado");
+                }
+                
+                // Validar cantidad según la unidad de medida del producto
+                if ($product->measurementUnit && !QuantityValidator::validate($detail['sd_qty'], $product->measurementUnit)) {
+                    $errorMessage = QuantityValidator::getErrorMessage($detail['sd_qty'], $product->measurementUnit);
+                    throw new \Exception("Producto {$product->product_name}: {$errorMessage}");
+                }
+                
+                // Validar que hay suficiente stock
+                if ($product->product_quantity < $detail['sd_qty']) {
+                    $unitName = $product->measurementUnit ? $product->measurementUnit->unit_name : 'Unidad';
+                    throw new \Exception("Stock insuficiente para {$product->product_name}. Disponible: {$product->product_quantity} {$unitName}, Solicitado: {$detail['sd_qty']} {$unitName}");
+                }
+            }
+            
             $tills = new TillsController;
             $till_data = new Request([
                 'fromController' => true
