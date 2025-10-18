@@ -25,9 +25,11 @@
 	let errors = null;
 	let iva_types = [];
 	let brands = [];
+	let measurements = [];
 	let categories = [];
 	let iva_type_selected ;
 	let brand_selected ;
+	let measurement_selected ;
 	let category_selected ;
 	let searchTerm = '';
 	let showDropdown = false;
@@ -48,6 +50,19 @@
 	function getCategories() {
 		axios.get(`/api/categories`).then((response) => {
 			categories = response.data.data;
+		}).catch((err) => {
+			let detail = {
+				detail: {
+					type: 'delete',
+					message: err.response.data.message
+				}
+			};
+		});
+	}
+
+	function getMeasurements(){
+		axios.get(`/api/measurement-units`).then((response) => {
+			measurements = response.data.data;
 		}).catch((err) => {
 			let detail = {
 				detail: {
@@ -90,6 +105,7 @@
 
 	onMount(() => {
 		getCategories();
+		getMeasurements()
 		getBrands();
 		getIvaTypes();
 		if (edit == true) {
@@ -114,12 +130,13 @@
 				product_name,
 				product_desc,
 				product_cost_price,
-				product_quantity,
+				product_quantity:parseFloat(product_quantity),
 				product_image,
 				product_barcode,
 				product_selling_price,
 				category_id: category_selected?.value ?? null,
 				iva_type_id: iva_type_selected?.value ?? null,
+				measurement_unit_id: measurement_selected?.value ?? null,
 				brand_id: brand_selected?.value ?? null
 			})
 			.then((res) => {
@@ -186,6 +203,16 @@
 			})
 		)
 	}
+
+	function Measurements(){
+		return measurements.map(
+			measurement => ({
+				label: measurement.unit_name,
+				value: measurement.id
+			})
+		)
+	}
+
 	function Brands(){
 		return brands.map(
 			brand => ({
@@ -277,6 +304,16 @@
 		showDropdown={showDropdown}
 		loading={loading}
 		filterdItem={Categories()}
+	/>
+	<Autocomplete
+		errors={errors}
+		label="Unidad de medida"
+		bind:item_selected={measurement_selected}
+		items={measurements.map(x => ({label: x.unit_name, value: x.id}))}
+		searchTerm={searchTerm}
+		showDropdown={showDropdown}
+		loading={loading}
+		filterdItem={Measurements()}
 	/>
 	<Autocomplete
 		errors={errors}
