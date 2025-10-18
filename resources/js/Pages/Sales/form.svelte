@@ -574,6 +574,7 @@
                     <td class="text-center">
                         <input
                             type="number"
+                            step="0.1"
                             class="peer p-4 block border-gray-200 rounded-lg text-base placeholder:text-transparent focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none
                             focus:pt-6
                             focus:pb-2
@@ -581,7 +582,7 @@
                             [&:not(:placeholder-shown)]:pb-2
                             autofill:pt-6
                             autofill:pb-2"
-                            min="1"
+                            min="0.1"
                             bind:value={item.quantity}
                         />
                         <!-- <Textfield

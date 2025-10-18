@@ -3,6 +3,7 @@
 namespace App\Validators;
 
 use App\Models\MeasurementUnit;
+use App\Utils\QuantityValidationException;
 
 class QuantityValidator
 {
@@ -17,12 +18,12 @@ class QuantityValidator
     {
         // Validar que sea numérico y positivo
         if (!is_numeric($quantity) || $quantity <= 0) {
-            return false;
+            throw new QuantityValidationException("Cantidad no valida");
         }
 
         // Si la unidad no permite decimales, validar que sea entero
         if (!$unit->allows_decimals && floor($quantity) != $quantity) {
-            return false;
+            throw new QuantityValidationException("Este producto no permite decimales");
         }
 
         return true;
@@ -38,15 +39,16 @@ class QuantityValidator
     public static function getErrorMessage($quantity, MeasurementUnit $unit): ?string
     {
         if (!is_numeric($quantity)) {
-            return 'La cantidad debe ser un número válido';
+            throw new QuantityValidationException("Cantidad debe ser numerica");
+
         }
 
         if ($quantity <= 0) {
-            return 'La cantidad debe ser un número positivo';
+            throw new QuantityValidationException("Cantidad debe ser positiva");
         }
 
         if (!$unit->allows_decimals && floor($quantity) != $quantity) {
-            return "La unidad {$unit->unit_name} no permite cantidades decimales";
+            throw new QuantityValidationException("Unidad no permite decimales");
         }
 
         return null;

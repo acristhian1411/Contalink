@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Requests\StoreSalesRequest;
 use App\Models\Products;
 use App\Validators\QuantityValidator;
+use App\Utils\QuantityValidationException;
 class SaleStoreController extends ApiController
 {
     /**
@@ -34,19 +35,19 @@ class SaleStoreController extends ApiController
                 $product = Products::with('measurementUnit')->find($detail['product_id']);
                 
                 if (!$product) {
-                    throw new \Exception("Producto con ID {$detail['product_id']} no encontrado");
+                    throw new QuantityValidationException("Producto con ID {$detail['product_id']} no encontrado");
                 }
                 
                 // Validar cantidad según la unidad de medida del producto
                 if ($product->measurementUnit && !QuantityValidator::validate($detail['sd_qty'], $product->measurementUnit)) {
                     $errorMessage = QuantityValidator::getErrorMessage($detail['sd_qty'], $product->measurementUnit);
-                    throw new \Exception("Producto {$product->product_name}: {$errorMessage}");
+                    throw new QuantityValidationException("Producto {$product->product_name}: {$errorMessage}");
                 }
                 
                 // Validar que hay suficiente stock
                 if ($product->product_quantity < $detail['sd_qty']) {
                     $unitName = $product->measurementUnit ? $product->measurementUnit->unit_name : 'Unidad';
-                    throw new \Exception("Stock insuficiente para {$product->product_name}. Disponible: {$product->product_quantity} {$unitName}, Solicitado: {$detail['sd_qty']} {$unitName}");
+                    throw new QuantityValidationException("Stock insuficiente para {$product->product_name}. Disponible: {$product->product_quantity} {$unitName}, Solicitado: {$detail['sd_qty']} {$unitName}");
                 }
             }
             
@@ -125,7 +126,16 @@ class SaleStoreController extends ApiController
             DB::commit();
             $something = [];
             return $this->showAfterAction($something, 'create', 201);
+        } catch(QuantityValidationException $e) {
+            DB::rollBack();
+            Log::error($e->getMessage());
+            return response()->json([
+                'error'=>'',
+                'errors' => $e->getErrors(),
+                'message' => 'Problemas con error',
+            ], 422);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error($e->errors());
             DB::rollBack();
             return response()->json([
                 'error' => $e->getMessage(),
@@ -133,8 +143,9 @@ class SaleStoreController extends ApiController
                 'details' => method_exists($e, 'errors') ? $e->errors() : null
             ]);
         } catch (\Exception $e) {
+            Log::error($e->getMessage());
             DB::rollback();
-            return response()->json(['error' => $e, 'message' => 'Ocurrió un error mientras se creaba el registro'], 500);
+            return response()->json(['error' => $e->getMessage(), 'message' => 'Ocurrió un error mientras se creaba el registro'], 500);
         }
 
     }
