@@ -194,5 +194,11 @@ class PermissionsSeeder extends Seeder
         Permission::firstOrCreate(['name'=>'salesdetails.create','guard_name'=> 'web']);
         Permission::firstOrCreate(['name'=>'salesdetails.update','guard_name'=> 'web']);
         Permission::firstOrCreate(['name'=>'salesdetails.destroy','guard_name'=> 'web']);
+        // permissions for measurement_units
+        Permission::firstOrCreate(['name'=>'measurement_units.index','guard_name'=> 'web']);
+        Permission::firstOrCreate(['name'=>'measurement_units.show','guard_name'=> 'web']);
+        Permission::firstOrCreate(['name'=>'measurement_units.create','guard_name'=> 'web']);
+        Permission::firstOrCreate(['name'=>'measurement_units.update','guard_name'=> 'web']);
+        Permission::firstOrCreate(['name'=>'measurement_units.destroy','guard_name'=> 'web']);
     }
 }

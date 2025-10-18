@@ -71,6 +71,12 @@ export const configItems =(user)=> [
         route: '/contacttypes',
         icon: BoxesIcon,
         permission: user != undefined && user.permissions != undefined && user.permissions.includes('contacttypes.index')
+    },
+    {
+        label: 'Unidades de medida',
+        route:'/measurments',
+        icon: BoxesIcon,
+        permission: user != undefined && user.permissions != undefined && user.permissions.includes('measurement_units.index')
     }
 ];
 export const productsItems =(user)=> [

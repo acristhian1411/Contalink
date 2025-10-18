@@ -20,7 +20,7 @@ class MeasurementUnitsController extends ApiController
      *     @OA\Response(response=200, description="Successful operation")
      * )
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
@@ -30,7 +30,7 @@ class MeasurementUnitsController extends ApiController
             $query = $this->filterData($query, $t);
             $datos = $query->get();
             $from = request()->wantsJson() ? 'api' : 'web';
-            return $this->showAll($datos, $from, 'MeasurementUnits/index', 200);
+            return $this->showAll($datos, $from, 'Measurment/index', 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo obtener los datos']);
         }
@@ -47,7 +47,7 @@ class MeasurementUnitsController extends ApiController
      * )
      *
      * @param  \App\Http\Requests\MeasurementUnitRequest  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(MeasurementUnitRequest $request)
     {
@@ -70,7 +70,7 @@ class MeasurementUnitsController extends ApiController
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function show($id)
     {
@@ -82,7 +82,7 @@ class MeasurementUnitsController extends ApiController
                 return $this->showOne($measurementUnit, $audits, 200);
             }
             
-            return Inertia::render('MeasurementUnits/show', [
+            return Inertia::render('Measurment/show', [
                 'measurementUnit' => $measurementUnit,
                 'audits' => $audits
             ]);
@@ -99,7 +99,7 @@ class MeasurementUnitsController extends ApiController
      *
      * @param  \App\Http\Requests\MeasurementUnitRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(MeasurementUnitRequest $request, $id)
     {
@@ -124,7 +124,7 @@ class MeasurementUnitsController extends ApiController
      * Remove the specified resource from storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
@@ -154,7 +154,7 @@ class MeasurementUnitsController extends ApiController
      * Activate a measurement unit.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function activate($id)
     {
@@ -179,7 +179,7 @@ class MeasurementUnitsController extends ApiController
      * Deactivate a measurement unit.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function deactivate($id)
     {
@@ -203,14 +203,14 @@ class MeasurementUnitsController extends ApiController
     /**
      * Get only active measurement units.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function active()
     {
         try {
             $datos = MeasurementUnit::active()->get();
             $from = request()->wantsJson() ? 'api' : 'web';
-            return $this->showAll($datos, $from, 'MeasurementUnits/active', 200);
+            return $this->showAll($datos, $from, 'Measurment/active', 200);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => $e->getMessage(),

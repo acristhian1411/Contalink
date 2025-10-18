@@ -15,6 +15,7 @@ use App\Http\Controllers\States\StatesController;
 use App\Http\Controllers\Brands\BrandController;
 use App\Http\Controllers\Products\ProductsController;
 use App\Http\Controllers\Users\UsersController;
+use App\Http\Controllers\MeasurementUnits\MeasurementUnitsController;
 
 Route::middleware(['web'])->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -43,6 +44,13 @@ Route::group(['middleware' => ['auth']],function(){
     Route::get('/persontypes/{id}',[PersonTypesController::class,'show'])->name('persontypes.show')->middleware('permission:persontypes.show');
     Route::put('/persontypes/{id}',[PersonTypesController::class,'update'])->name('persontypes.update')->middleware('permission:persontypes.update');
     Route::delete('/persontypes/{id}',[PersonTypesController::class,'destroy'])->name('persontypes.destroy')->middleware('permission:persontypes.destroy');
+
+    // routes for measurments
+    Route::get('/measurments', [MeasurementUnitsController::class,'index'])->name('measurement_units')->middleware('permission:measurement_units.index');
+    Route::get('/measurments/{id}',[MeasurementUnitsController::class,'show'])->name('measurement_units.show')->middleware('permission:measurement_units.show');
+    Route::put('/measurments/{id}',[MeasurementUnitsController::class,'update'])->name('measurement_units:update')->middleware('permission:measurement_units.update');
+    Route::post('/measurments',[MeasurementUnitsController::class,'store'])->name('measurement_units:create')->middleware('permission:measurement_units.create');
+    Route::delete('/measurments',[MeasurementUnitsController::class,'destroy'])->name('measurement_units:destroy')->middleware('permission:measurement_units.destroy');
 
     // routes for countries
     Route::get('/countries', [CountriesController::class,'index'])->name('countries')->middleware('permission:countries.index');
