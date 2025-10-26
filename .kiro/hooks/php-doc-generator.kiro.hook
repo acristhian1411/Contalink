@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "PHP Documentation Generator",
+  "description": "Automatically generates or updates PHPDoc blocks for PHP methods in controllers, models, and services when files are modified. Analyzes function signatures, type hints, and comments to create comprehensive documentation following Laravel and PHPStan best practices.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "app/Http/Controllers/**/*.php",
+      "app/Models/**/*.php",
+      "app/Services/**/*.php"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A PHP file has been modified. Please analyze the changed functions/methods and generate or update PHPDoc blocks following these requirements:\n\n1. **Analysis Focus**: Look for new or modified functions/methods, especially in controller classes\n2. **PHPDoc Generation**: Create comprehensive documentation blocks including:\n   - @brief short summary (1 sentence max)\n   - @param annotations with inferred types and purposes\n   - @return annotation with inferred return type and description\n   - @throws if exceptions can be thrown\n   - Concise description explaining business logic context\n\n3. **Standards Compliance**:\n   - Follow Laravel and PHPStan best practices\n   - Maintain PSR-12 formatting\n   - Use English for docblocks, keep Spanish business terms when relevant\n   - Only update documentation, never modify function code\n\n4. **Documentation Logging**: \n   - Log changes in /docs/controller_docs.md\n   - Include function name, controller path, and one-line summary\n\n5. **Preservation**: If docblocks exist, only update missing/outdated info without removing custom notes\n\nPlease analyze the modified file and generate appropriate PHPDoc blocks for any new or changed methods."
+  }
+}

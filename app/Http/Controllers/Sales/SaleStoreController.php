@@ -71,6 +71,8 @@ class SaleStoreController extends ApiController
                     ];
                 })->toArray()
             ]);
+            $p_controller = new ProductsController();
+            $p_controller->updatePriceAndQty($product_data);
             // Log::alert($update);
             $Sales = new SalesController;
             $sale_data = new Request([
