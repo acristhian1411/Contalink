@@ -4,12 +4,7 @@
   "description": "Automatically generates or updates PHPDoc blocks for PHP methods in controllers, models, and services when files are modified. Analyzes function signatures, type hints, and comments to create comprehensive documentation following Laravel and PHPStan best practices.",
   "version": "1",
   "when": {
-    "type": "fileEdited",
-    "patterns": [
-      "app/Http/Controllers/**/*.php",
-      "app/Models/**/*.php",
-      "app/Services/**/*.php"
-    ]
+    "type": "userTriggered"
   },
   "then": {
     "type": "askAgent",

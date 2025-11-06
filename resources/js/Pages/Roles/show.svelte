@@ -3,16 +3,23 @@
     import {blur} from 'svelte/transition';
     import Permissions from './permissions.svelte';
     import { Inertia } from '@inertiajs/inertia';
-    import axios from 'axios';
+    // import axios from 'axios';
     export let appUrl
     export let id = 0;
-    let role = {};
-    let audits = [];
+    export let role ;
+    export let audits = [];
     let error = null;
     let url = `${appUrl}/api/roles/`;
 
     async function fetchData() {
-        axios.get(`${url}${id}`).then((response) => {
+
+        axios.get(`${url}${id}`,
+            {
+                headers:{
+                    'Content-Type': 'application/json'
+                }
+            }
+        ).then((response) => {
             role = response.data.data;
             audits = response.data.audits;
         }).catch((err) => {
@@ -21,7 +28,7 @@
     }
 
     onMount(async () => {
-        fetchData();
+        // fetchData();
     });
     function goTo(route){
         Inertia.visit(route);

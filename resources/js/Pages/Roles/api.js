@@ -8,7 +8,7 @@ export async function fetchPermissionsForRole(roleId) {
   }
 
   export async function fetchPermissionsNotContainRole(roleId) {
-    const res = await fetch(`/api/permissions/${roleId}/rolesnotcontain?per_page=100&wantsJson=true`);
+    const res = await fetch(`/api/permissions/not-in-role/${roleId}?per_page=100&wantsJson=true`);
     const data = await res.json();
   
     return {
@@ -17,7 +17,7 @@ export async function fetchPermissionsForRole(roleId) {
   }
   
   export async function assignPermissionsToRole(roleId, permissions) {
-    const res = await fetch(`/api/roles/${roleId}/permissions?wantsJson=true`, {
+    const res = await fetch(`/api/users/${roleId}/roles?wantsJson=true`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

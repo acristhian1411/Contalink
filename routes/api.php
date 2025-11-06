@@ -271,6 +271,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     Route::prefix('permissions')->name('api.permissions.')->middleware('permission:permissions.index')->group(function () {
         Route::get('/', [PermissionsController::class, 'index'])->name('index');
+        Route::get('/not-in-role/{roleId}', [PermissionsController::class,'showPermissionsNotContainRole'])->name('not-in-role');
         Route::get('/{id}', [PermissionsController::class, 'show'])
             ->middleware('permission:permissions.show')
             ->name('show');
