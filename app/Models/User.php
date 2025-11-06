@@ -9,6 +9,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use OwenIt\Auditing\Auditable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Persons;
 
 class User extends Authenticatable implements AuditableContract
 {
@@ -24,6 +25,19 @@ class User extends Authenticatable implements AuditableContract
         'email',
         'password',
         'person_id',
+    ];
+
+    /**
+     * The attributes that should be guarded from mass assignment.
+     *
+     * @var array<int, string>
+     */
+    protected $guarded = [
+        'id',
+        'email_verified_at',
+        'remember_token',
+        'created_at',
+        'updated_at',
     ];
 
     /**
@@ -55,5 +69,10 @@ class User extends Authenticatable implements AuditableContract
     public function getRoleNames()
     {
         return $this->roles()->get();
+    }
+
+    public function person()
+    {
+        return $this->belongsTo(Persons::class);
     }
 }

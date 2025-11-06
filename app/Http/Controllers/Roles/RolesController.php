@@ -8,22 +8,27 @@ use App\Http\Controllers\ApiController;
 use Spatie\Permission\Models\Permission;
 use G4T\Swagger\Attributes\SwaggerSection;
 use App\Http\Requests\StoreRoleRequest;
+use App\Http\Requests\IndexRequest;
+use Inertia\Inertia;
 #[SwaggerSection('Roles')]
 class RolesController extends ApiController
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
-    public function index()
+    public function index(IndexRequest $req)
     {
         try{
             $t = Role::query()->first();
             $query = Role::query();
             $query = $this->filterData($query, $t);
             $datos = $query->get();
-            return $this->showAll($datos, 'api','',200);
+            // $datos = Role::all();
+            $from = $req->wantsJson() ? 'api' : 'web';
+            // dd($datos);
+            return $this->showAll($datos, $from,'Roles/index',200);
         }catch(\Exception $e){
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo obtener los datos'],500);
         }
@@ -118,14 +123,17 @@ class RolesController extends ApiController
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function show($id)
     {
         try{
             $role = Role::find($id);
             $audits = $role->audits;
-            return $this->showOne($role,$audits,200);
+            if(request()->wantsJson()){
+                return $this->showOne($role,$audits,200);
+            }
+            return Inertia::render('Roles/show', ['role' => $role,'audits'=>$audits]);
         } catch(\Exception $e){
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo obtener los datos'],500);
         }
@@ -164,7 +172,7 @@ class RolesController extends ApiController
      * Remove the specified resource from storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {

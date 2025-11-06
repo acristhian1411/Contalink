@@ -43,7 +43,7 @@ class SalesController extends ApiController
                 'sale_number' => 'required'
             ];
             $request->validate( $reglas);
-            $data = $request->all();
+            $data = $request->only(['person_id', 'sale_date', 'sale_number']);
             $sales = Sales::create($data);
             return $this->showAfterAction($sales,'create', 201);
         }catch(\Exception $e){
@@ -102,7 +102,7 @@ class SalesController extends ApiController
                 'sale_type' => 'required'
             ];
             $request->validate( $reglas);
-            $data = $request->all();
+            $data = $request->only(['person_id', 'sale_desc', 'sale_date', 'sale_number', 'sale_status', 'sale_type']);
             $sales = Sales::findOrFail($id);
             $sales->update($data);
             return $this->showAfterAction($sales,'update', 200);

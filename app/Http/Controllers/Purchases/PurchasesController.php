@@ -67,7 +67,7 @@ class PurchasesController extends ApiController
             ];
             // dd($request);
             $request->validate($reglas);
-            $purchases = Purchases::create($request->all());
+            $purchases = Purchases::create($request->only(['person_id', 'purchase_date', 'purchase_number']));
             // dd($purchases);
             return $this->showAfterAction($purchases,'create', 201);
         }catch(\Exception $e){
@@ -146,7 +146,7 @@ class PurchasesController extends ApiController
             ];
             $request->validate($reglas);
             $purchases = Purchases::find($id);
-            $purchases->update($request->all());
+            $purchases->update($request->only(['person_id', 'purchase_desc', 'purchase_date', 'purchase_number', 'purchase_status', 'purchase_type']));
             return $this->showAfterAction($purchases,'update', 200);
         }catch(\Exception $e){
             return response()->json(['error' => $e->getMessage(), 'message'=>'Ocurrió un error mientras se actualizaba el registro'],500);

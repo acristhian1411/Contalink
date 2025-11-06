@@ -23,6 +23,18 @@ class Purchases extends Model implements AuditableContract
     'purchase_type'
     ];
 
+    /**
+     * The attributes that should be guarded from mass assignment.
+     *
+     * @var array<int, string>
+     */
+    protected $guarded = [
+        'id',
+        'created_at',
+        'updated_at',
+        'deleted_at',
+    ];
+
     public function person()
     {
         return $this->belongsTo(Persons::class);

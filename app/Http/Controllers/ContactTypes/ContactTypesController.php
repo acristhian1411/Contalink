@@ -40,7 +40,7 @@ class ContactTypesController extends ApiController
                 'cont_type_desc' => 'required|string|max:255',
             ];
             $request->validate($rules);
-            $ContactType = ContactType::create($request->all());
+            $ContactType = ContactType::create($request->validated());
             return response()->json(['message'=>'Registro creado con exito','data'=>$ContactType],201);
         }
         catch(\Illuminate\Validation\ValidationException $e){
@@ -90,7 +90,7 @@ class ContactTypesController extends ApiController
             ];
             $request->validate($rules);
             $ContactType = ContactType::findOrFail($id);
-            $ContactType->update($request->all());
+            $ContactType->update($request->validated());
             if(request()->wantsJson()){
                 return response()->json(['message'=>'Registro Actualizado con exito','data'=>$ContactType],200);
             }

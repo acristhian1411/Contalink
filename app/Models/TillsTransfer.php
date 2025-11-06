@@ -14,12 +14,22 @@ class TillsTransfer extends Model implements AuditableContract
     use SoftDeletes;
 
     protected $fillable = [
-        'id',
         'origin_id',
         'destiny_id',
         't_transfer_amount',
         't_transfer_date',
         't_transfer_obs', 
+    ];
+
+    /**
+     * The attributes that should be guarded from mass assignment.
+     *
+     * @var array<int, string>
+     */
+    protected $guarded = [
+        'id',
+        'created_at',
+        'updated_at',
     ];
 
     public function origin()

@@ -84,8 +84,8 @@ class AuthController extends Controller
             'password' => 'required|min:6',
         ]);
            
-        $data = $request->all();
-        $check = $this->create($data);
+        $data = $request->only(['name', 'email', 'password']);
+        $check = $this->create($request);
          
         return redirect("dashboard")->withSuccess('You have signed-in');
     }

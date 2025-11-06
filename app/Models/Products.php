@@ -27,6 +27,18 @@ class Products extends Model implements AuditableContract
         'measurement_unit_id',
     ];
 
+    /**
+     * The attributes that should be guarded from mass assignment.
+     *
+     * @var array<int, string>
+     */
+    protected $guarded = [
+        'id',
+        'created_at',
+        'updated_at',
+        'deleted_at',
+    ];
+
 
     public function category()
     {

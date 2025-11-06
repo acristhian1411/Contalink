@@ -41,7 +41,6 @@
         <table class="table w-full">
             <thead>
                 <tr>
-                    <!-- <th>Id</th> -->
                     <th class="text-center text-lg">Usuario</th>
                     <th class="text-center text-lg">Evento</th>
                     <th class="text-center text-lg">Fecha</th>
@@ -58,7 +57,6 @@
                             <strong>Valores antiguos:</strong> {JSON.stringify(audit.old_values)}<br>
                             <strong>Valores nuevos:</strong> {JSON.stringify(audit.new_values)}
                         </td>
-    
                     </tr>
                 {/each}
             </tbody>

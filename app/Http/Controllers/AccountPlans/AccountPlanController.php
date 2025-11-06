@@ -40,7 +40,7 @@ class AccountPlanController extends ApiController
             'account_code' => 'required|string|max:255',
         ];
         $this->validate($request, $rules);
-        $accountPlan = AccountPlan::create($request->all());
+        $accountPlan = AccountPlan::create($request->validated());
         return $this->showOne($accountPlan, 201);
     }
 
@@ -79,7 +79,7 @@ class AccountPlanController extends ApiController
         $accountPlan = AccountPlan::find($id);
 
         // Update the account plan with the new data
-        $accountPlan->update($request->all());
+        $accountPlan->update($request->validated());
 
         // Return a success response
         return $this->showOne($accountPlan, 200);

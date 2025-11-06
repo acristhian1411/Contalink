@@ -16,183 +16,310 @@ use App\Http\Controllers\Brands\BrandController;
 use App\Http\Controllers\Products\ProductsController;
 use App\Http\Controllers\Users\UsersController;
 use App\Http\Controllers\MeasurementUnits\MeasurementUnitsController;
+use App\Http\Controllers\CspReportController;
+use App\Http\Controllers\Web\SalesWebController;
+use App\Http\Controllers\Web\PurchasesWebController;
+use App\Http\Controllers\Persons\PersonsController;
+use App\Http\Controllers\Tills\TillsController;
+use App\Http\Controllers\TillsProcess\TillsProcessController;
+use App\Http\Controllers\Refunds\RefundsController;
+use App\Http\Controllers\Roles\RolesController;
 
-Route::middleware(['web'])->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/logout', [AuthController::class, 'logout']);
-});
-Route::get('/register', function () {
-    return Inertia::render('Register/index');
-});
-Route::group(['middleware' => ['auth']],function(){
+// ========================================
+// PUBLIC ROUTES (No Authentication Required)
+// ========================================
 
-    Route::get('/roles', function () {
-        return Inertia::render('Roles/index');
-    })->middleware('permission:roles.index');
-
-    Route::get('/roles/{id}', function ($id) {
-        return Inertia::render('Roles/show', ['id' => $id]);
-    })->middleware('permission:roles.show');
-
-    Route::get('/users', [UsersController::class,'index'])->middleware('permission:users.index');
-    Route::get('/users/{id}', [UsersController::class,'show'])->middleware('permission:users.show');
-    Route::put('/users/{id}',[UsersController::class,'update'])->middleware('permission:users.update');
-    Route::post('/users',[UsersController::class,'store'])->middleware('permission:users.create');
-    Route::delete('/users/{id}',[UsersController::class,'destroy'])->middleware('permission:users.destroy');
-
-    Route::get('/persontypes', [PersonTypesController::class,'index'])->name('persontypes')->middleware('permission:persontypes.index');
-    Route::get('/persontypes/{id}',[PersonTypesController::class,'show'])->name('persontypes.show')->middleware('permission:persontypes.show');
-    Route::put('/persontypes/{id}',[PersonTypesController::class,'update'])->name('persontypes.update')->middleware('permission:persontypes.update');
-    Route::delete('/persontypes/{id}',[PersonTypesController::class,'destroy'])->name('persontypes.destroy')->middleware('permission:persontypes.destroy');
-
-    // routes for measurments
-    Route::get('/measurments', [MeasurementUnitsController::class,'index'])->name('measurement_units')->middleware('permission:measurement_units.index');
-    Route::get('/measurments/{id}',[MeasurementUnitsController::class,'show'])->name('measurement_units.show')->middleware('permission:measurement_units.show');
-    Route::put('/measurments/{id}',[MeasurementUnitsController::class,'update'])->name('measurement_units:update')->middleware('permission:measurement_units.update');
-    Route::post('/measurments',[MeasurementUnitsController::class,'store'])->name('measurement_units:create')->middleware('permission:measurement_units.create');
-    Route::delete('/measurments',[MeasurementUnitsController::class,'destroy'])->name('measurement_units:destroy')->middleware('permission:measurement_units.destroy');
-
-    // routes for countries
-    Route::get('/countries', [CountriesController::class,'index'])->name('countries')->middleware('permission:countries.index');
-    Route::get('/countries/{id}',[CountriesController::class,'show'])->name('countries.show')->middleware('permission:countries.show');
-    Route::put('/countries/{id}',[CountriesController::class,'update'])->name('countries:update')->middleware('permission:countries.update');
-    Route::post('/countries',[CountriesController::class,'store'])->name('countries:create')->middleware('permission:countries.create');
-    Route::delete('/countries',[CountriesController::class,'destroy'])->name('countries:destroy')->middleware('permission:countries.destroy');
-
-    // routes for states
-    Route::get('/states', [StatesController::class,'index'])->name('states')->middleware('permission:states.index');
-    Route::get('/states/{id}',[StatesController::class,'show'])->name('states.show')->middleware('permission:states.show');
-    Route::post('/states',[StatesController::class,'store'])->name('states:create')->middleware('permission:states.create');
-    Route::put('/states/{id}',[StatesController::class,'update'])->name('states:update')->middleware('permission:states.update');
-    Route::delete('/states/{id}',[StatesController::class,'destroy'])->name('states:destroy')->middleware('permission:states.destroy');
-
-    // routes for cities
-    Route::get('/cities', [CitiesController::class,'index'])->name('cities')->middleware('permission:cities.index');
-    Route::get('/cities/{id}',[CitiesController::class,'show'])->name('cities.show')->middleware('permission:cities.show');
-    Route::post('/cities',[CitiesController::class,'store'])->name('cities:create')->middleware('permission:cities.create');
-    Route::put('/cities/{id}',[CitiesController::class,'update'])->name('cities:update')->middleware('permission:cities.update');
-    Route::delete('/cities/{id}',[CitiesController::class,'destroy'])->name('cities:destroy')->middleware('permission:cities.destroy');
-
-    Route::get('/tills',function(){
-        return Inertia::render('Tills/index');
-    })->middleware('permission:tills.index');
-
-    Route::get('/tills/{id}', function ($id) {
-        return Inertia::render('Tills/show', ['id' => $id]);
-    })->middleware('permission:tills.show');
-
-    Route::get('/tills/{id}/closeDetailed', function ($id) {
-        return Inertia::render('Tills/tillsCloseReportDetailed', ['id' => $id]);
-    })->middleware('permission:tills.show');
-
-    Route::get('/tilltypes',[TillTypeController::class,'index'])->name('tilltypes')->middleware('permission:tilltypes.index');
-    Route::get('/tilltypes/{id}',[TillTypeController::class,'show'])->name('tilltypes.show')->middleware('permission:tilltypes.show');
-    Route::put('/tilltypes/{id}',[TillTypeController::class,'update'])->name('tilltypes:update')->middleware('permission:tilltypes.update');
-    Route::post('/tilltypes',[TillTypeController::class,'store'])->name('tilltypes:create')->middleware('permission:tilltypes.create');
-    Route::delete('/tilltypes/{id}',[TillTypeController::class,'destroy'])->name('tilltypes:destroy')->middleware('permission:tilltypes.destroy');
-
-    Route::get('/ivatypes',[IvaTypeController::class,'index'])->name('ivatypes')->middleware('permission:ivatypes.index');
-    Route::get('/ivatypes/{id}',[IvaTypeController::class,'show'])->name('ivatypes.show')->middleware('permission:ivatypes.show');
-    Route::put('/ivatypes/{id}',[IvaTypeController::class,'update'])->name('ivatypes:update')->middleware('permission:ivatypes.update');
-    Route::post('/ivatypes',[IvaTypeController::class,'store'])->name('ivatypes:create')->middleware('permission:ivatypes.create');
-    Route::delete('/ivatypes/{id}',[IvaTypeController::class,'destroy'])->name('ivatypes:destroy')->middleware('permission:ivatypes.destroy');
-
-    Route::get('/categories', [CategoriesController::class,'index'])->middleware('permission:categories.index');
-    Route::get('/categories/{id}', [CategoriesController::class,'show'])->middleware('permission:categories.show');
-    Route::put('/categories/{id}', [CategoriesController::class,'update'])->middleware('permission:categories.update');
-    Route::post('/categories',[CategoriesController::class,'store'])->middleware('permission:categories.create');
-    Route::delete('/categories/{id}',[CategoriesController::class,'destroy'])->middleware('permission:categories.destroy');
-
-    
-    Route::get('/paymenttypes',[PaymentTypesController::class,'index'])->name('persontypes.index')->middleware('permission:persontypes.index');
-    Route::post('/paymenttypes',[PaymentTypesController::class,'store'])->name('persontypes.create')->middleware('permission:persontypes.create');
-    Route::get('/paymenttypes/{id}',[PaymentTypesController::class,'show'])->name('paymenttypes.show')->middleware('permission:paymenttypes.show');
-    Route::put('/paymenttypes/{id}',[PaymentTypesController::class,'update'])->name('paymenttypes.update')->middleware('permission:paymenttypes.update');
-    Route::delete('/paymenttypes/{id}',[PaymentTypesController::class,'destroy'])->name('paymenttypes.destroy')->middleware('permission:paymenttypes.destroy');
-    
-    Route::get('/brands', [BrandController::class,'index'])->middleware('permission:brands.index');
-    Route::get('/brands/{id}',[BrandController::class,'show'])->middleware('permission:brands.show');
-    Route::put('/brands/{id}',[BrandController::class,'update'])->middleware('permission:brands.update');
-    Route::post('/brands',[BrandController::class,'store'])->middleware('permission:brands.create');
-    Route::delete('/brands/{id}',[BrandController::class,'destroy'])->middleware('permission:brands.destroy');
-
-    Route::get('/products', [ProductsController::class,'index'])->middleware('permission:products.index');
-    Route::get('/products/{id}', [ProductsController::class,'show'])->middleware('permission:products.show');
-
-    Route::get('/reports', function () {
-        return Inertia::render('Reports/index');
-    })->middleware('permission:reports.show');
-
-    Route::get('/providers', function () {
-        return Inertia::render('Providers/index');
-    })->middleware('permission:providers.index');
-
-    Route::get('/providers/{id}', function ($id) {
-        return Inertia::render('Providers/show', ['id' => $id]);
-    })->middleware('permission:providers.show');
-
-    Route::get('/employees',function(){
-        return Inertia::render('Employees/index');
-    })->middleware('permission:employees.index');
-
-    Route::get('/employees/{id}', function ($id) {
-        return Inertia::render('Employees/show', ['id' => $id]);
-    })->middleware('permission:employees.show');
-
-    Route::get('/clients',function(){
-        return Inertia::render('Clients/index');
-    })->middleware('permission:clients.index');
-
-    Route::get('/clients/{id}', function ($id) {
-        return Inertia::render('Clients/show', ['id' => $id]);
-    })->middleware('permission:clients.show');
-
-    Route::get('/contacttypes',[ContactTypesController::class,'index'])->name('contacttypes.index')->middleware('permission:contacttypes.index');
-    Route::get('/contacttypes/{id}', [ContactTypesController::class,'show'])->middleware('permission:contacttypes.show');
-    Route::put('/contacttypes/{id}', [ContactTypesController::class,'update'])->middleware('permission:contacttypes.update');
-    Route::post('/contacttypes', [ContactTypesController::class,'store'])->middleware('permission:contacttypes.create');
-    Route::delete('/contacttypes/{id}', [ContactTypesController::class,'destroy'])->middleware('permission:contacttypes.destroy');
-
-    Route::get('/purchases',function(){
-        return Inertia::render('Purchases/List');
-    })->middleware('permission:purchases.index');
-
-    Route::get('/create-purchase', function () {
-        return Inertia::render('Purchases/Form');
-    })->middleware('permission:purchases.create');
-
-    Route::get('/purchases/{id}', function ($id) {
-        return Inertia::render('Purchases/Show', ['id' => $id]);
-    })->middleware('permission:purchases.show');
-
-    Route::get('/sales', function () {
-        return Inertia::render('Sales/index');
-    })->middleware('permission:sales.index');
-
-    Route::get('sales/{id}',function($id){
-        return Inertia::render('Sales/Show',['id'=> $id]);
-    })->middleware('permission:sales.show');
-
-    Route::get('/create-sales', function () {
-        return Inertia::render('Sales/form');
-    })->middleware('permission:sales.create');
-
-    Route::get(`/refunds`,function(){
-        return Inertia::render(`Refunds/index`);
-    })->middleware('permission:sales.index');
-
-    Route::get('/create-refunds', function () {
-        return Inertia::render('Refunds/form');
-    })->middleware('permission:sales.create');
-});
-
-
+// Home page - redirect to dashboard if authenticated
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
     return Inertia::render('Home', ['name' => 'Usuario']);
-});
+})->name('home');
 
-
+// Login page
 Route::get('/login', function () {
     return Inertia::render('Login/index');
 })->name('login');
 
+// Public routes (no authentication required)
+Route::middleware(['web'])->group(function () {
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    
+    // CSP violation reporting endpoint (no auth required)
+    Route::post('/csp-report', [CspReportController::class, 'report'])->name('csp.report');
+    
+    // Registration form (view only - actual registration requires admin permission via API)
+    Route::get('/register', function () {
+        return Inertia::render('Register/index');
+    })->name('register');
+});
+
+// Dashboard - main authenticated landing page
+Route::get('/dashboard', function () {
+    return Inertia::render('Home', [
+        'name' => auth()->user()->name ?? 'Usuario'
+    ]);
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+// ========================================
+// AUTHENTICATED ROUTES WITH PROPER MIDDLEWARE AND CONSISTENT NAMING
+// ========================================
+Route::middleware(['auth', 'verified'])->group(function () {
+    
+    // ========================================
+    // SALES MANAGEMENT - Secure Web Routes
+    // ========================================
+    Route::prefix('sales')->name('sales.')->group(function () {
+        Route::get('/', [SalesWebController::class, 'index'])->middleware('permission:sales.index')->name('index');
+        Route::get('/create', [SalesWebController::class, 'create'])->middleware('permission:sales.create')->name('create');
+        Route::post('/', [SalesWebController::class, 'store'])->middleware('permission:sales.create')->name('store');
+        Route::get('/{id}', [SalesWebController::class, 'show'])->middleware('permission:sales.show')->name('show');
+    });
+
+    // ========================================
+    // PURCHASES MANAGEMENT - Secure Web Routes
+    // ========================================
+    Route::prefix('purchases')->name('purchases.')->group(function () {
+        Route::get('/', [PurchasesWebController::class, 'index'])->middleware('permission:purchases.index')->name('index');
+        Route::get('/create', [PurchasesWebController::class, 'create'])->middleware('permission:purchases.create')->name('create');
+        Route::post('/', [PurchasesWebController::class, 'store'])->middleware('permission:purchases.create')->name('store');
+        Route::get('/{id}', [PurchasesWebController::class, 'show'])->middleware('permission:purchases.show')->name('show');
+    });
+
+    // ========================================
+    // REFUNDS MANAGEMENT - Web Routes
+    // ========================================
+    Route::prefix('refunds')->name('refunds.')->group(function () {
+        Route::get('/', function () {
+            return Inertia::render('Refunds/index');
+        })->middleware('permission:refunds.index')->name('index');
+        
+        Route::get('/create', function () {
+            return Inertia::render('Refunds/form');
+        })->middleware('permission:refunds.create')->name('create');
+        
+        Route::post('/', [RefundsController::class, 'store'])->middleware('permission:refunds.create')->name('store');
+        
+        Route::get('/{id}', function ($id) {
+            return Inertia::render('Refunds/show', ['id' => $id]);
+        })->middleware('permission:refunds.show')->name('show');
+    });
+
+    // ========================================
+    // PERSONS MANAGEMENT (Clients, Providers, Employees)
+    // ========================================
+    Route::prefix('persons')->name('persons.')->group(function () {
+        // Clients
+        Route::get('/clients', function () {
+            return Inertia::render('Clients/index');
+        })->middleware('permission:clients.index')->name('clients.index');
+        
+        Route::get('/clients/{id}', function ($id) {
+            return Inertia::render('Clients/show', ['id' => $id]);
+        })->middleware('permission:clients.show')->name('clients.show');
+        
+        Route::post('/clients', [PersonsController::class, 'store'])->middleware('permission:clients.create')->name('clients.store');
+        Route::put('/clients/{id}', [PersonsController::class, 'update'])->middleware('permission:clients.update')->name('clients.update');
+        Route::delete('/clients/{id}', [PersonsController::class, 'destroy'])->middleware('permission:clients.delete')->name('clients.destroy');
+
+        // Providers
+        Route::get('/providers', function () {
+            return Inertia::render('Providers/index');
+        })->middleware('permission:providers.index')->name('providers.index');
+        
+        Route::get('/providers/{id}', function ($id) {
+            return Inertia::render('Providers/show', ['id' => $id]);
+        })->middleware('permission:providers.show')->name('providers.show');
+        
+        Route::post('/providers', [PersonsController::class, 'store'])->middleware('permission:providers.create')->name('providers.store');
+        Route::put('/providers/{id}', [PersonsController::class, 'update'])->middleware('permission:providers.update')->name('providers.update');
+        Route::delete('/providers/{id}', [PersonsController::class, 'destroy'])->middleware('permission:providers.delete')->name('providers.destroy');
+
+        // Employees
+        Route::get('/employees', function () {
+            return Inertia::render('Employees/index');
+        })->middleware('permission:employees.index')->name('employees.index');
+        
+        Route::get('/employees/{id}', function ($id) {
+            return Inertia::render('Employees/show', ['id' => $id]);
+        })->middleware('permission:employees.show')->name('employees.show');
+        
+        Route::post('/employees', [PersonsController::class, 'store'])->middleware('permission:employees.create')->name('employees.store');
+        Route::put('/employees/{id}', [PersonsController::class, 'update'])->middleware('permission:employees.update')->name('employees.update');
+        Route::delete('/employees/{id}', [PersonsController::class, 'destroy'])->middleware('permission:employees.delete')->name('employees.destroy');
+    });
+
+    // ========================================
+    // TILLS MANAGEMENT - Web Routes
+    // ========================================
+    Route::prefix('tills')->name('tills.')->group(function () {
+        Route::get('/', function () {
+            return Inertia::render('Tills/index');
+        })->middleware('permission:tills.index')->name('index');
+        
+        Route::get('/{id}', function ($id) {
+            return Inertia::render('Tills/show', ['id' => $id]);
+        })->middleware('permission:tills.show')->name('show');
+        
+        Route::get('/{id}/close-detailed', function ($id) {
+            return Inertia::render('Tills/tillsCloseReportDetailed', ['id' => $id]);
+        })->middleware('permission:tills.show')->name('close-detailed');
+        
+        Route::post('/', [TillsController::class, 'store'])->middleware('permission:tills.create')->name('store');
+        Route::put('/{id}', [TillsController::class, 'update'])->middleware('permission:tills.update')->name('update');
+        Route::delete('/{id}', [TillsController::class, 'destroy'])->middleware('permission:tills.delete')->name('destroy');
+        
+        // Till operations
+        Route::post('/{id}/open', [TillsProcessController::class, 'cashOpening'])->middleware('permission:tills.update')->name('open');
+        Route::post('/{id}/close', [TillsProcessController::class, 'close'])->middleware('permission:tills.update')->name('close');
+        Route::post('/{id}/deposit', [TillsProcessController::class, 'deposit'])->middleware('permission:tills.update')->name('deposit');
+        Route::post('/{id}/transfer', [TillsProcessController::class, 'transfer'])->middleware('permission:tills.update')->name('transfer');
+    });
+
+    // ========================================
+    // USER MANAGEMENT - Web Routes
+    // ========================================
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [UsersController::class, 'index'])->middleware('permission:users.index')->name('index');
+        Route::get('/{id}', [UsersController::class, 'show'])->middleware('permission:users.show')->name('show');
+        Route::post('/', [UsersController::class, 'store'])->middleware('permission:users.create')->name('store');
+        Route::put('/{id}', [UsersController::class, 'update'])->middleware('permission:users.update')->name('update');
+        Route::delete('/{id}', [UsersController::class, 'destroy'])->middleware('permission:users.delete')->name('destroy');
+    });
+
+    // ========================================
+    // ROLES MANAGEMENT - Web Routes
+    // ========================================
+    Route::prefix('roles')->name('roles.')->group(function () {
+        Route::get('/', [RolesController::class, 'index'])->middleware('permission:roles.index')->name('index');
+        
+        Route::get('/{id}', [RolesController::class, 'show'])->middleware('permission:roles.show')->name('show');
+    });
+
+    // ========================================
+    // PRODUCTS MANAGEMENT - Web Routes
+    // ========================================
+    Route::prefix('products')->name('products.')->group(function () {
+        Route::get('/', [ProductsController::class, 'index'])->middleware('permission:products.index')->name('index');
+        Route::get('/{id}', [ProductsController::class, 'show'])->middleware('permission:products.show')->name('show');
+        Route::post('/', [ProductsController::class, 'store'])->middleware('permission:products.create')->name('store');
+        Route::put('/{id}', [ProductsController::class, 'update'])->middleware('permission:products.update')->name('update');
+        Route::delete('/{id}', [ProductsController::class, 'destroy'])->middleware('permission:products.delete')->name('destroy');
+    });
+
+    // ========================================
+    // CATALOG MANAGEMENT - Web Routes (Reference Data)
+    // ========================================
+    
+    // Categories
+    Route::prefix('categories')->name('categories.')->group(function () {
+        Route::get('/', [CategoriesController::class, 'index'])->middleware('permission:categories.index')->name('index');
+        Route::get('/{id}', [CategoriesController::class, 'show'])->middleware('permission:categories.show')->name('show');
+        Route::post('/', [CategoriesController::class, 'store'])->middleware('permission:categories.create')->name('store');
+        Route::put('/{id}', [CategoriesController::class, 'update'])->middleware('permission:categories.update')->name('update');
+        Route::delete('/{id}', [CategoriesController::class, 'destroy'])->middleware('permission:categories.delete')->name('destroy');
+    });
+
+    // Brands
+    Route::prefix('brands')->name('brands.')->group(function () {
+        Route::get('/', [BrandController::class, 'index'])->middleware('permission:brands.index')->name('index');
+        Route::get('/{id}', [BrandController::class, 'show'])->middleware('permission:brands.show')->name('show');
+        Route::post('/', [BrandController::class, 'store'])->middleware('permission:brands.create')->name('store');
+        Route::put('/{id}', [BrandController::class, 'update'])->middleware('permission:brands.update')->name('update');
+        Route::delete('/{id}', [BrandController::class, 'destroy'])->middleware('permission:brands.delete')->name('destroy');
+    });
+
+    // Measurement Units
+    Route::prefix('measurement-units')->name('measurement-units.')->group(function () {
+        Route::get('/', [MeasurementUnitsController::class, 'index'])->middleware('permission:measurement_units.index')->name('index');
+        Route::get('/{id}', [MeasurementUnitsController::class, 'show'])->middleware('permission:measurement_units.show')->name('show');
+        Route::post('/', [MeasurementUnitsController::class, 'store'])->middleware('permission:measurement_units.create')->name('store');
+        Route::put('/{id}', [MeasurementUnitsController::class, 'update'])->middleware('permission:measurement_units.update')->name('update');
+        Route::delete('/{id}', [MeasurementUnitsController::class, 'destroy'])->middleware('permission:measurement_units.delete')->name('destroy');
+    });
+
+    // Person Types
+    Route::prefix('person-types')->name('person-types.')->group(function () {
+        Route::get('/', [PersonTypesController::class, 'index'])->middleware('permission:persontypes.index')->name('index');
+        Route::get('/{id}', [PersonTypesController::class, 'show'])->middleware('permission:persontypes.show')->name('show');
+        Route::post('/', [PersonTypesController::class, 'store'])->middleware('permission:persontypes.create')->name('store');
+        Route::put('/{id}', [PersonTypesController::class, 'update'])->middleware('permission:persontypes.update')->name('update');
+        Route::delete('/{id}', [PersonTypesController::class, 'destroy'])->middleware('permission:persontypes.delete')->name('destroy');
+    });
+
+    // Till Types
+    Route::prefix('till-types')->name('till-types.')->group(function () {
+        Route::get('/', [TillTypeController::class, 'index'])->middleware('permission:tilltypes.index')->name('index');
+        Route::get('/{id}', [TillTypeController::class, 'show'])->middleware('permission:tilltypes.show')->name('show');
+        Route::post('/', [TillTypeController::class, 'store'])->middleware('permission:tilltypes.create')->name('store');
+        Route::put('/{id}', [TillTypeController::class, 'update'])->middleware('permission:tilltypes.update')->name('update');
+        Route::delete('/{id}', [TillTypeController::class, 'destroy'])->middleware('permission:tilltypes.delete')->name('destroy');
+    });
+
+    // IVA Types
+    Route::prefix('iva-types')->name('iva-types.')->group(function () {
+        Route::get('/', [IvaTypeController::class, 'index'])->middleware('permission:ivatypes.index')->name('index');
+        Route::get('/{id}', [IvaTypeController::class, 'show'])->middleware('permission:ivatypes.show')->name('show');
+        Route::post('/', [IvaTypeController::class, 'store'])->middleware('permission:ivatypes.create')->name('store');
+        Route::put('/{id}', [IvaTypeController::class, 'update'])->middleware('permission:ivatypes.update')->name('update');
+        Route::delete('/{id}', [IvaTypeController::class, 'destroy'])->middleware('permission:ivatypes.delete')->name('destroy');
+    });
+
+    // Payment Types
+    Route::prefix('payment-types')->name('payment-types.')->group(function () {
+        Route::get('/', [PaymentTypesController::class, 'index'])->middleware('permission:paymenttypes.index')->name('index');
+        Route::get('/{id}', [PaymentTypesController::class, 'show'])->middleware('permission:paymenttypes.show')->name('show');
+        Route::post('/', [PaymentTypesController::class, 'store'])->middleware('permission:paymenttypes.create')->name('store');
+        Route::put('/{id}', [PaymentTypesController::class, 'update'])->middleware('permission:paymenttypes.update')->name('update');
+        Route::delete('/{id}', [PaymentTypesController::class, 'destroy'])->middleware('permission:paymenttypes.delete')->name('destroy');
+    });
+
+    // Contact Types
+    Route::prefix('contact-types')->name('contact-types.')->group(function () {
+        Route::get('/', [ContactTypesController::class, 'index'])->middleware('permission:contacttypes.index')->name('index');
+        Route::get('/{id}', [ContactTypesController::class, 'show'])->middleware('permission:contacttypes.show')->name('show');
+        Route::post('/', [ContactTypesController::class, 'store'])->middleware('permission:contacttypes.create')->name('store');
+        Route::put('/{id}', [ContactTypesController::class, 'update'])->middleware('permission:contacttypes.update')->name('update');
+        Route::delete('/{id}', [ContactTypesController::class, 'destroy'])->middleware('permission:contacttypes.delete')->name('destroy');
+    });
+
+    // ========================================
+    // GEOGRAPHIC DATA - Web Routes
+    // ========================================
+    
+    // Countries
+    Route::prefix('countries')->name('countries.')->group(function () {
+        Route::get('/', [CountriesController::class, 'index'])->middleware('permission:countries.index')->name('index');
+        Route::get('/{id}', [CountriesController::class, 'show'])->middleware('permission:countries.show')->name('show');
+        Route::post('/', [CountriesController::class, 'store'])->middleware('permission:countries.create')->name('store');
+        Route::put('/{id}', [CountriesController::class, 'update'])->middleware('permission:countries.update')->name('update');
+        Route::delete('/{id}', [CountriesController::class, 'destroy'])->middleware('permission:countries.delete')->name('destroy');
+    });
+
+    // States
+    Route::prefix('states')->name('states.')->group(function () {
+        Route::get('/', [StatesController::class, 'index'])->middleware('permission:states.index')->name('index');
+        Route::get('/{id}', [StatesController::class, 'show'])->middleware('permission:states.show')->name('show');
+        Route::post('/', [StatesController::class, 'store'])->middleware('permission:states.create')->name('store');
+        Route::put('/{id}', [StatesController::class, 'update'])->middleware('permission:states.update')->name('update');
+        Route::delete('/{id}', [StatesController::class, 'destroy'])->middleware('permission:states.delete')->name('destroy');
+    });
+
+    // Cities
+    Route::prefix('cities')->name('cities.')->group(function () {
+        Route::get('/', [CitiesController::class, 'index'])->middleware('permission:cities.index')->name('index');
+        Route::get('/{id}', [CitiesController::class, 'show'])->middleware('permission:cities.show')->name('show');
+        Route::post('/', [CitiesController::class, 'store'])->middleware('permission:cities.create')->name('store');
+        Route::put('/{id}', [CitiesController::class, 'update'])->middleware('permission:cities.update')->name('update');
+        Route::delete('/{id}', [CitiesController::class, 'destroy'])->middleware('permission:cities.delete')->name('destroy');
+    });
+
+    // ========================================
+    // REPORTS - Web Routes
+    // ========================================
+    Route::get('/reports', function () {
+        return Inertia::render('Reports/index');
+    })->middleware('permission:reports.show')->name('reports.index');
+});

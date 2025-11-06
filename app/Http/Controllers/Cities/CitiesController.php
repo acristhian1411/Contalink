@@ -54,7 +54,7 @@ class CitiesController extends ApiController
                 'state_id' => 'required|int',
             ];
             $request->validate($rules);
-            $cities = Cities::create($request->all());
+            $cities = Cities::create($request->validated());
             return $this->showAfterAction($cities,'create',201);
         }
         catch(\Illuminate\Validation\ValidationException $e){
@@ -73,7 +73,7 @@ class CitiesController extends ApiController
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function show($id)
     {
@@ -99,7 +99,7 @@ class CitiesController extends ApiController
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function update(Request $request, $id)
     {
@@ -111,7 +111,7 @@ class CitiesController extends ApiController
             ];
             $request->validate($rules);
             $cities = Cities::findOrFail($id);
-            $cities->update($request->all());
+            $cities->update($request->validated());
             $cities->save();
             return $this->showAfterAction($cities,'update',200);
         }
@@ -159,7 +159,7 @@ class CitiesController extends ApiController
      * Remove the specified resource from storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function destroy($id)
     {

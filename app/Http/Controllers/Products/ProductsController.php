@@ -7,6 +7,7 @@ use App\Models\MeasurementUnit;
 use App\Validators\QuantityValidator;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ApiController;
+use App\Http\Requests\SecureProductRequest;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 
@@ -45,22 +46,9 @@ class ProductsController extends ApiController
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): JsonResponse
+    public function store(SecureProductRequest $request): JsonResponse
     {
         try{
-            $rules = [
-                'product_name' => 'required|string|max:255',
-                'product_desc' => 'nullable|string',
-                'product_cost_price' => 'required|numeric|min:0',
-                'product_quantity' => 'required|numeric|min:0',
-                'product_selling_price' => 'required|numeric|min:0',
-                'category_id' => 'required',
-                'iva_type_id' => 'required',
-                'brand_id' => 'required',
-                'measurement_unit_id' => 'nullable|exists:measurement_units,id',
-            ];
-            
-            $request->validate($rules);
             
             // Validar cantidad según la unidad de medida
             if ($request->has('measurement_unit_id') && $request->measurement_unit_id) {
@@ -74,7 +62,7 @@ class ProductsController extends ApiController
                 }
             }
             
-            $products = Products::create($request->all());
+            $products = Products::create($request->validated());
             
             // Cargar la relación de unidad de medida para la respuesta
             $products->load('measurementUnit');
@@ -187,21 +175,9 @@ class ProductsController extends ApiController
      * @param  int $id the id of the product
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request,int $id): JsonResponse
+    public function update(SecureProductRequest $request,int $id): JsonResponse
     {
         try{
-            $reglas = [
-                'product_name' => 'required|string|max:255',
-                'product_desc' => 'required|string',
-                'product_cost_price' => 'required|numeric|min:0',
-                'product_quantity' => 'required|numeric|min:0',
-                'product_selling_price' => 'required|numeric|min:0',
-                'category_id' => 'required|integer',
-                'iva_type_id' => 'required|integer',
-                'brand_id' => 'required|integer',
-                'measurement_unit_id' => 'nullable|exists:measurement_units,id'
-            ];
-            $request->validate($reglas);
             
             // Validar cantidad según la unidad de medida
             if ($request->has('measurement_unit_id') && $request->measurement_unit_id) {
@@ -216,7 +192,7 @@ class ProductsController extends ApiController
             }
             
             $products = Products::findOrFail($id);
-            $products->update($request->all());
+            $products->update($request->validated());
             
             // Cargar la relación de unidad de medida para la respuesta
             $products->load('measurementUnit');
@@ -247,6 +223,86 @@ class ProductsController extends ApiController
             return response()->json(['message'=>'Eliminado con exito']);
         }catch(\Exception $e){
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo eliminar los datos'],500);
+        }
+    }
+
+    /**
+     * Search for products with authentication and permissions
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function search(Request $request)
+    {
+        try {
+            $request->validate([
+                'q' => 'required|string|min:2|max:100',
+                'category_id' => 'nullable|integer|exists:categories,id',
+                'brand_id' => 'nullable|integer|exists:brands,id',
+                'in_stock' => 'nullable|boolean',
+                'limit' => 'nullable|integer|min:1|max:50'
+            ]);
+
+            $query = Products::query()
+                ->join('categories', 'products.category_id', '=', 'categories.id')
+                ->join('iva_types', 'products.iva_type_id', '=', 'iva_types.id')
+                ->join('brands', 'products.brand_id', '=', 'brands.id')
+                ->leftJoin('measurement_units', 'products.measurement_unit_id', '=', 'measurement_units.id')
+                ->select(
+                    'products.*',
+                    'iva_types.iva_type_desc',
+                    'iva_types.iva_type_percent',
+                    'categories.cat_desc',
+                    'brands.brand_name',
+                    'measurement_units.unit_name',
+                    'measurement_units.unit_abbreviation',
+                    'measurement_units.allows_decimals'
+                );
+
+            // Filter by category if provided
+            if ($request->has('category_id') && $request->category_id) {
+                $query->where('products.category_id', $request->category_id);
+            }
+
+            // Filter by brand if provided
+            if ($request->has('brand_id') && $request->brand_id) {
+                $query->where('products.brand_id', $request->brand_id);
+            }
+
+            // Filter by stock availability
+            if ($request->has('in_stock') && $request->in_stock) {
+                $query->where('products.product_quantity', '>', 0);
+            }
+
+            // Search across multiple fields
+            $searchTerm = $request->q;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('products.product_name', 'ilike', "%{$searchTerm}%")
+                  ->orWhere('products.product_desc', 'ilike', "%{$searchTerm}%")
+                  ->orWhere('categories.cat_desc', 'ilike', "%{$searchTerm}%")
+                  ->orWhere('brands.brand_name', 'ilike', "%{$searchTerm}%");
+            });
+
+            $limit = $request->get('limit', 20);
+            $results = $query->limit($limit)->get();
+
+            return response()->json([
+                'data' => $results,
+                'message' => 'Búsqueda completada exitosamente',
+                'count' => $results->count()
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'message' => 'Los parámetros de búsqueda no son válidos',
+                'details' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'message' => 'No se pudo realizar la búsqueda'
+            ], 500);
         }
     }
 }

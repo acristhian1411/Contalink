@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Categories;
 use App\Models\Categories;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ApiController;
+use App\Http\Requests\SecureBasicRequest;
 use Inertia\Inertia;
 
 class CategoriesController extends ApiController
@@ -34,14 +35,10 @@ class CategoriesController extends ApiController
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(SecureBasicRequest $request)
     {
         try{
-            $rules = [
-                'cat_desc' => 'required|string|max:255',
-            ];
-            $request->validate($rules);
-            $categories = Categories::create($request->all());
+            $categories = Categories::create($request->validated());
             return response()->json(['message'=>'Registro creado con exito','data'=>$categories],201);
         }
         catch(\Illuminate\Validation\ValidationException $e){
@@ -83,15 +80,11 @@ class CategoriesController extends ApiController
      * @param  \App\Models\Categories  $categories
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(SecureBasicRequest $request, $id)
     {
         try{
-            $rules = [
-                'cat_desc' => 'required|string|max:255',
-            ];
-            $request->validate($rules);
             $categories = Categories::findOrFail($id);
-            $categories->update($request->all());
+            $categories->update($request->validated());
             return response()->json(['message'=>'Registro Actualizado con exito','data'=>$categories],200);
         }catch(\Illuminate\Validation\ValidationException $e){
             return response()->json([

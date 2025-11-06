@@ -172,4 +172,73 @@ class PersonsController extends ApiController
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo obtener los datos'],500);
         }
     }
+
+    /**
+     * @brief Search for persons (clients/providers) with dynamic filtering and authentication
+     * 
+     * Provides a secure search endpoint for finding persons by name, RUC, ID number, or corporate name.
+     * Supports filtering by person type and result limiting. Requires proper authentication and permissions.
+     *
+     * @param  \Illuminate\Http\Request  $request Request containing search parameters (q, type, limit)
+     * @return \Illuminate\Http\JsonResponse JSON response with search results, count, and success message
+     * @throws \Illuminate\Validation\ValidationException When search parameters are invalid
+     * @throws \Exception When database query fails or other system errors occur
+     */
+    public function search(Request $request)
+    {
+        try {
+            $request->validate([
+                'q' => 'required|string|min:2|max:100',
+                'type' => 'nullable|integer|exists:person_types,id',
+                'limit' => 'nullable|integer|min:1|max:50'
+            ]);
+
+            $query = Persons::query()
+                ->join('person_types', 'person_types.id', '=', 'persons.p_type_id')
+                ->join('countries', 'countries.id', '=', 'persons.country_id')
+                ->join('cities', 'cities.id', '=', 'persons.city_id')
+                ->select(
+                    'persons.*',
+                    'person_types.p_type_desc',
+                    'countries.country_name',
+                    'cities.city_name'
+                );
+
+            // Filter by person type if provided
+            if ($request->has('type') && $request->type) {
+                $query->where('persons.p_type_id', $request->type);
+            }
+
+            // Search across multiple fields
+            $searchTerm = $request->q;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('persons.person_fname', 'ilike', "%{$searchTerm}%")
+                  ->orWhere('persons.person_lastname', 'ilike', "%{$searchTerm}%")
+                  ->orWhere('persons.person_corpname', 'ilike', "%{$searchTerm}%")
+                  ->orWhere('persons.person_ruc', 'ilike', "%{$searchTerm}%")
+                  ->orWhere('persons.person_idnumber', 'ilike', "%{$searchTerm}%");
+            });
+
+            $limit = $request->get('limit', 20);
+            $results = $query->limit($limit)->get();
+
+            return response()->json([
+                'data' => $results,
+                'message' => 'Búsqueda completada exitosamente',
+                'count' => $results->count()
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'message' => 'Los parámetros de búsqueda no son válidos',
+                'details' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'message' => 'No se pudo realizar la búsqueda'
+            ], 500);
+        }
+    }
 }

@@ -41,7 +41,7 @@ class PersonTypesController extends ApiController
                 'p_type_desc' => 'required|string|max:255',
             ];
             $request->validate($rules);
-            $personType = PersonTypes::create($request->all());
+            $personType = PersonTypes::create($request->validated());
             return response()->json(['message'=>'Registro creado con exito','data'=>$personType]);
         }catch(\Illuminate\Validation\ValidationException $e){
             // dd($e);

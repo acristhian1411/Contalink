@@ -46,7 +46,7 @@ class StatesController extends ApiController
             ];
             $request->validate($rules);
     
-            $states = States::create($request->all());
+            $states = States::create($request->validated());
             return $this->showAfterAction($states,'create',201);
         }catch(\Illuminate\Validation\ValidationException $e){
             return response()->json([
@@ -117,7 +117,7 @@ class StatesController extends ApiController
             ];
             $request->validate($rules);
             $states = States::findOrFail($id);
-            $states->update($request->all());
+            $states->update($request->validated());
             return $this->showAfterAction($states,'update',200);
         }
         catch(\Illuminate\Validation\ValidationException $e){
