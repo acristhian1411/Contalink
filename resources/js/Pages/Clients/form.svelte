@@ -1,61 +1,38 @@
 <script>
-	// @ts-nocheck
-	import axios from 'axios';
-	// import {getToken} from '../../services/authservice'
 	import { onMount } from 'svelte';
-	import { createEventDispatcher } from 'svelte';
+	import { useForm } from '@inertiajs/svelte';
 	import {Textfield, Autocomplete} from '@components/FormComponents';
 
-	const dispatch = createEventDispatcher();
-	let id = 0;
-	let person_fname = '';
-	let person_lastname = '';
-	let person_corpname = '';
-	let person_idnumber = '';
-	let person_ruc = '';
-	let person_birtdate = '';
-	let person_photo = '';
-	let person_address = '';
-	let p_type_id = 2;
-	let country_id = 0;
-	let countries = [];
-	let country_selected;
-	let searchTermCountry = '';
-	let loading = false;
-	let showDropdown = false;
-	let city_id = 0;
-	let cities = [];
-	let city_selected;
-	let searchTermCity = '';
-	export let edit;
-	export let item;
-	let errors = null;
-	let token = '';
-	let config = {
-		headers: {
-			authorization: `token: ${token}`,
-		},
-	}
-	function close() {
-		dispatch('close');
-	}
+	// Props from Inertia pre-loading
+	export let staticData;
+	export const userContext = null;
+	export const formConfig = null;
+	export let mode = 'create';
+	export let edit = mode === 'edit';
+	export let item = null;
+	export let personType = 2; // Default to client type
 
-	function OpenAlertMessage(event) {
-		dispatch('message', event.detail);
-	}
-	function getCountries() {
-		axios.get(`/api/countries`).then((response) => {
-			countries = response.data.data;
-		}).catch((err) => {
-			let detail = {
-				detail: {
-					type: 'delete',
-					message: err.response.data.message
-				}
-			};
-		});
-	}
+	// Destructure static data from props
+	const { countries, cities } = staticData;
 
+	// Form state management with Inertia
+	let form = useForm({
+		person_fname: item?.person_fname || '',
+		person_lastname: item?.person_lastname || '',
+		person_corpname: item?.person_corpname || '',
+		person_idnumber: item?.person_idnumber || '',
+		person_ruc: item?.person_ruc || '',
+		person_birtdate: item?.person_birtdate || '',
+		person_address: item?.person_address || '',
+		p_type_id: personType,
+		country_id: item?.country_id || '',
+		city_id: item?.city_id || ''
+	});
+
+	// UI state variables
+	let country_selected = item ? { value: item.country_id, label: item.country?.country_name } : null;
+	let city_selected = item ? { value: item.city_id, label: item.city?.city_name } : null;
+	// Helper functions for autocomplete options
 	function Countries(){
 		return countries.map(
 			country => ({
@@ -63,19 +40,6 @@
 				value: country.id
 			})
 		)
-	}
-
-	function getCities() {
-		axios.get(`/api/cities`).then((response) => {
-			cities = response.data.data;
-		}).catch((err) => {
-			let detail = {
-				detail: {
-					type: 'delete',
-					message: err.response.data.message
-				}
-			};
-		});
 	}
 
 	function Cities(){
@@ -87,166 +51,109 @@
 		)
 	}
 
-	onMount(() => {
-		getCountries();
-		getCities();
-		if (edit == true) {
-			id = item.id;
-			person_fname = item.person_fname;
-			person_lastname = item.person_lastname;
-			person_corpname = item.person_corpname;
-			person_idnumber = item.person_idnumber;
-			person_ruc = item.person_ruc;
-			person_birtdate = item.person_birtdate;
-			person_address = item.person_address;
-			p_type_id = item.p_type_id;
-			country_selected = {label: item.country_name, value: item.country_id};
-			searchTermCountry = item.country_name;
-			searchTermCity = item.city_name;
-			city_selected = {label: item.city_name, value: item.city_id};
+	// Form submission with Inertia
+	function handleSubmit() {
+		// Update form data with selected values
+		form.country_id = country_selected?.value || null;
+		form.city_id = city_selected?.value || null;
+		form.person_idnumber = form.person_ruc; // Set ID number same as RUC
+
+		if (edit) {
+			form.put(`/persons/${item.id}`, {
+				onSuccess: () => {
+					history.back();
+				},
+				onError: (errors) => {
+					console.error('Validation errors:', errors);
+				}
+			});
+		} else {
+			form.post('/persons', {
+				onSuccess: () => {
+					history.back();
+				},
+				onError: (errors) => {
+					console.error('Validation errors:', errors);
+				}
+			});
 		}
-	});
-	// http://127.0.0.1:5173/tilltypes
-	function handleCreateObject(event) {
-		event.preventDefault();
-		axios
-			.post(`/api/persons`, {
-				person_fname,
-				person_corpname,
-				person_idnumber:person_ruc,
-				person_ruc,
-				person_birtdate:'2022-01-01',
-				person_address,
-				person_lastname,
-				country_id: country_selected?.value? country_selected.value : null,
-				city_id: city_selected?.value? city_selected.value : null,
-				p_type_id: p_type_id
-			},config)
-			.then((res) => {
-				let detail = {
-					detail: {
-						type: 'success',
-						message: res.data.message
-					}
-				};
-				OpenAlertMessage(detail);
-				close();
-			}).catch((err) => {
-				errors = err.response.data.details ? err.response.data.details : null;
-				let detail = {
-					detail: {
-						type: 'delete',
-						message: err.response.data.message
-					}
-				};
-				OpenAlertMessage(detail);
-			});
-	}
-	function handleUpdateObject(event) {
-		event.preventDefault();
-		axios
-			.put(`/api/persons/${id}`, {
-				person_fname,
-				person_corpname,
-				person_idnumber:person_ruc,
-				person_ruc,
-				person_birtdate:'2022-01-01',
-				person_address,
-				person_lastname,
-				country_id: country_selected?.value? country_selected.value : null,
-				city_id: city_selected?.value? city_selected.value : null,
-				p_type_id: p_type_id
-			},config)
-			.then((res) => {
-				let detail = {
-					detail: {
-						type: 'success',
-						message: res.data.message
-					}
-				};
-				OpenAlertMessage(detail);
-				close();
-			}).catch((err) => {
-				errors = err.response.data.details ? err.response.data.details : null;
-				let detail = {
-					detail: {
-						type: 'delete',
-						message: err.response.data.message
-					}
-				};
-				OpenAlertMessage(detail);
-			});
 	}
 </script>
 
-{#if edit == true}
-	<h3 class="mb-4 text-center text-2xl">Actualizar Clientes.</h3>
-{:else}
-	<h3 class="mb-4 text-center text-2xl">Crear Clientes.</h3>
-{/if}
-<form on:submit={edit == true ? handleUpdateObject : handleCreateObject} class="grid grid-cols-2 gap-4"> 
+<svelte:head>
+	<title>{edit ? "Actualizar Cliente" : "Crear Cliente"}</title>
+</svelte:head>
+
+<h3 class="mb-4 text-center text-2xl">
+	{edit ? "Actualizar Cliente" : "Crear Cliente"}
+</h3>
+
+<form on:submit|preventDefault={handleSubmit} class="grid grid-cols-2 gap-4"> 
 	<Textfield 
 		label="Nombre" 
-		bind:value={person_fname} 
-		errors={errors?.person_fname ? {message:errors.person_fname[0]} : null} 
+		bind:value={form.person_fname} 
+		errors={form.errors?.person_fname ? {message: form.errors.person_fname} : null} 
 	/>
 	<Textfield 
 		label="Apellido"
-		bind:value={person_lastname} 
-		errors={errors?.person_lastname ? {message:errors.person_lastname[0]} : null} 
+		bind:value={form.person_lastname} 
+		errors={form.errors?.person_lastname ? {message: form.errors.person_lastname} : null} 
 	/>
 	<Textfield
 		label="Razón Social"
-		bind:value={person_corpname} 
+		bind:value={form.person_corpname} 
 		required={true}
-		errors={errors?.person_corpname ? {message:errors.person_corpname[0]} : null}
+		errors={form.errors?.person_corpname ? {message: form.errors.person_corpname} : null}
 	/>
 	<Textfield 
 		label="Código RUC"
-		bind:value={person_ruc} 
+		bind:value={form.person_ruc} 
 		required={true}
-		errors={errors?.person_ruc ? {message:errors.person_ruc[0]} : null} 
+		errors={form.errors?.person_ruc ? {message: form.errors.person_ruc} : null} 
 	/>
 	<Textfield
 		label="Fecha de nacimiento"
-		bind:value={person_birtdate}
-		required={true}
+		bind:value={form.person_birtdate}
 		type="date"
-		errors={errors?.person_birtdate ? {message:errors.person_birtdate[0]} : null}
+		errors={form.errors?.person_birtdate ? {message: form.errors.person_birtdate} : null}
 	/>
 	<Textfield
 		label="Dirección"
-		bind:value={person_address} 
-		errors={errors?.person_address ? {message:errors.person_address[0]} : null}
+		bind:value={form.person_address} 
+		errors={form.errors?.person_address ? {message: form.errors.person_address} : null}
 	/>
 
 	<Autocomplete
-		errors={errors}
+		errors={form.errors?.country_id ? {message: form.errors.country_id} : null}
 		label="País"
 		bind:item_selected={country_selected}
-		items={countries.map(x => ({label: x.country_name, value: x.id}))}
-		searchTerm={searchTermCountry}
-		showDropdown={showDropdown}
-		loading={loading}
+		items={Countries()}
+		searchTerm=""
+		showDropdown={false}
+		loading={false}
 		filterdItem={Countries()}
 	/>
 
 	<Autocomplete
-		errors={errors}
+		errors={form.errors?.city_id ? {message: form.errors.city_id} : null}
 		label="Ciudad"
 		bind:item_selected={city_selected}
-		items={cities.map(x => ({label: x.city_name, value: x.id}))}
-		searchTerm={searchTermCity}
-		showDropdown={showDropdown}
-		loading={loading}
+		items={Cities()}
+		searchTerm=""
+		showDropdown={false}
+		loading={false}
 		filterdItem={Cities()}
 	/>
-	<button
-		class="btn btn-primary"
-		type="submit"
-	>
-		Guardar
-	</button
-	>
-	<button class="btn btn-secondary" on:click={close}>Cancelar</button>
+	
+	<div class="col-span-2 flex gap-2 mt-4">
+		<button
+			class="btn btn-primary"
+			type="submit"
+			disabled={form.processing}>
+			{form.processing ? 'Guardando...' : 'Guardar'}
+		</button>
+		<button class="btn btn-secondary" type="button" on:click={() => history.back()}>
+			Cancelar
+		</button>
+	</div>
 </form>

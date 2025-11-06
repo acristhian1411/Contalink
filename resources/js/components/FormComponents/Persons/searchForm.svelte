@@ -16,8 +16,16 @@
         dispatch('selectPerson', person);
     }
 
-    function getPersons() {
-        axios.get(`/api/persons-search-by-type/${type}?search=${search_param}`).then((response) => {
+    async function getPersons() {
+        const apiHeaders = {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+        axios.get(`/api/search/persons-by-type/${type}`,{
+            params:{q:search_param},
+            headers: apiHeaders
+    }).then((response) => {
             data = response.data.data;
         }).catch((err) => {
             let detail = {

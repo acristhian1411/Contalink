@@ -13,7 +13,8 @@
 	// import { appUrl } from '$env/static/public';
 	export let user
     export let appUrl
-	let data = [];
+	export let data = [];
+	let roles = []
 	let error = null;
 	let openAlert = false;
 	let _new = false;
@@ -33,29 +34,28 @@
 	let url = `${appUrl}/api/roles?`;
 
 	function updateData() {
-		fetchData();
+		fetchData(current_page, items_per_page, orderBy, sort);
 		closeModal();
 	}
 
-	async function fetchData(page = current_page, rows = items_per_page) {
-		let token = '';
-		let config = {
-			headers: {
-				authorization: `token: ${token}`,
-			},
-		}
-		axios
-			// .get('/api/roles')
-			.get(`${url}sort_by=${orderBy}&order=${order}&page=${page}&per_page=${rows}`,config)
-			.then((response) => {
-				data = response.data.data;
-				current_page = response.data.currentPage;
-				total_items = response.data.per_page;
-				total_pages = response.data.last_page;
-			})
-			.catch((err) => {
-				error = err.request.response;
-			});
+	function assignData(data) {
+		current_page = data.currentPage;
+		total_items = data.per_page;
+		total_pages = data.last_page;
+		roles = data && data.data && data.data.length > 0 ? data.data : [];
+	}
+	async function fetchData(page = current_page, rows = items_per_page, sort = orderBy, order = sort) {
+		let ur = `${url}page=${page}&per_page=${rows}&order=${order}&sort_by=${orderBy}`;
+		axios.get(ur).then((response) => {
+			assignData(response.data);
+		}).catch((err) => {
+			let detail = {
+				detail: {
+					type: 'delete',
+					message: err.response.data.message
+				}
+			};
+		});
 	}
 
 	function closeAlert() {
@@ -80,7 +80,7 @@
 				authorization: `token: ${token}`,
 			},
 		}
-		axios.delete(`${appUrl}/api/roles/${id}`, config).then((res) => {
+		axios.delete(`${appUrl}/roles/${id}`, config).then((res) => {
 			let detail = {
 				detail: {
 					type: 'delete',
@@ -133,17 +133,14 @@
 	function search(event) {
 		search_param = event.target.value;
 		if (search_param == '') {
-			url = `${appUrl}/api/roles?`;
+			url = `${appUrl}/roles?`;
 		} else {
-			url = `${appUrl}/api/roles?name=${search_param}&guard_name=${search_param}&`;
+			url = `${appUrl}/roles?name=${search_param}&guard_name=${search_param}&`;
 		}
 		fetchData(1, items_per_page);
 	}
 	onMount(async () => {
-		// if(!isLoggedIn()){
-		// 	goto('/login');
-		// }
-		fetchData();
+		assignData(data);
 	});
 </script>
 
@@ -205,23 +202,23 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each data as person, i (person.id)}
+				{#each roles as role, i (role.id)}
 					<tr class="hover">
-						<td>{person.id}</td>
-						<td class="text-center">{person.name}</td>
+						<td>{role.id}</td>
+						<td class="text-center">{role.name}</td>
 						{#if user.permissions != undefined && user.permissions.includes('roles.show')}
 							<td>
-								<button class="btn btn-info" use:inertia={{ href: `/roles/${person.id}` }}>Mostrar</button>
+								<button class="btn btn-info" use:inertia={{ href: `/roles/${role.id}` }}>Mostrar</button>
 							</td>
 						{/if}
 						{#if user.permissions != undefined && user.permissions.includes('roles.update')}
 							<td>
-								<button class="btn btn-warning" on:click={() => openEditModal(person)}>Editar</button>
+								<button class="btn btn-warning" on:click={() => openEditModal(role)}>Editar</button>
 							</td>
 						{/if}
 						{#if user.permissions != undefined && user.permissions.includes('roles.destroy')}
 							<td>
-								<button class="btn btn-secondary" on:click={() => OpenDeleteModal(person.id)}
+								<button class="btn btn-secondary" on:click={() => OpenDeleteModal(role.id)}
 									>Eliminar</button
 								>
 							</td>	

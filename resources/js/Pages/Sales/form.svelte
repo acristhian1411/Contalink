@@ -1,7 +1,7 @@
 <script>
-    import axios from "axios";
     import { onMount, onDestroy } from "svelte";
-    import { createEventDispatcher } from "svelte";
+    import { useForm } from '@inertiajs/svelte';
+    import axios from "axios";
     import { SearchIcon } from "@components/Icons/";
     import {
         formatNumber,
@@ -18,139 +18,78 @@
     import DetailsTable from "./DetailsTable.svelte";
     import { Grid, GridItem } from "@components/utilities";
     import Form from "@pages/Clients/form.svelte";
-    import { get } from "svelte/store";
 
-    // cosas que se optienen por props
-    export let user;
-    export let edit;
-    export let item;
-    export let token = "";
+    // Props from Inertia pre-loading
+    export let staticData;
+    export let userContext;
+    export let formConfig;
+    export let mode = 'create';
+    export let edit = mode === 'edit';
+    export let item = null;
 
-    const dispatch = createEventDispatcher();
-    let tillsSelected = [];
-    let tills = [];
-    let tillsSearchTerm = "";
-    let Clients = [];
-    let paymentTypes = [];
-    let paymentTypesProcessed = [];
+    // Destructure static data from props
+    const { paymentTypes, ivaTypes, measurementUnits, categories, brands } = staticData;
+    const { user, permissions, userTills } = userContext;
+    const { saleNumber, defaultDate, validationRules, businessRules } = formConfig;
+
+    // Form state management with Inertia
+    let form = useForm({
+        person_id: item?.person_id || '',
+        sale_date: item?.sale_date || defaultDate,
+        sale_number: item?.sale_number || saleNumber,
+        till_id: userTills.length === 1 ? userTills[0].id : (item?.till_id || ''),
+        sale_details: item?.sale_details || [],
+        proofPayments: item?.proofPayments || []
+    });
+
+    // UI state variables
+    let tillsSelected = userTills.length === 1 ? 
+        { value: userTills[0].id, label: userTills[0].till_name } : 
+        (item ? { value: item.till_id, label: item.till?.till_name } : []);
+    let tillsSearchTerm = userTills.length === 1 ? userTills[0].till_name : 
+        (item?.till?.till_name || "");
+    let paymentTypesProcessed = paymentTypes.map(x => ({
+        label: x.paymentTypeDesc,
+        value: x.id,
+        proof_payments: x.proof_payments,
+    }));
     let paymentTypesSelected = [];
-    let searchTermPaymentTypes = "";
-    let showDropdownPaymentTypes = false;
-    let loadingPaymentTypes = false;
     let proofPaymentTypes = [];
-    let proofPaymentTypesSelected;
-    let ClientsSelected = [];
-    let searchTermClients = "";
-    let showDropdownClients = false;
+    let ClientsSelected = item?.person_id || '';
+    let searchTermClients = item?.person?.person_fname ? 
+        `${item.person.person_fname} ${item.person.person_lastname}` : '';
     let showPersonSearchForm = false;
-    let loading = false;
-    let saleDetails = [];
-    let id = 0;
-    let errors = null;
-    let config = {
-        headers: {
-            authorization: `token: ${token}`,
-        },
-    };
-    let showClientForm;
+    let showClientForm = false;
     let modal = false;
     let openAlert = false;
     let alertMessage = "";
     let alertType = "";
+    let saleDetails = item?.sale_details || [];
+
     $: saleDetails, getAmountTotal();
     $: proofPaymentTypes, getAmountReceived();
-    // $: paymentTypesSelected, filterProofPaymentTypes();
-    let date = new Date();
 
-    // Variables dinámicas para cada campo
-    let person_id = "";
-    let sale_date = date.toISOString().slice(0, 10);
-    let sale_status = "";
-    let sale_number = "";
-
-    // region Cajas
-    /**
-     * Función para obtener las cajas por usuario
-     * @param {void}
-     * @returns {void}
-     */
-    function getTillsByUser() {
-        axios
-            .get(`/api/tills/${user.person_id}/byPerson?wantsJson=true`)
-            .then((response) => {
-                tills = response.data.data;
-                if (tills.length === 1) {
-                    tillsSelected = {
-                        value: tills[0].id,
-                        label: tills[0].till_name,
-                    };
-                    tillsSearchTerm = tills[0].till_name;
+    // Dynamic data functions (using protected APIs)
+    async function searchClients(searchTerm) {
+        if (searchTerm.length < 3) return [];
+        
+        try {
+            const response = await axios.get('/api/search/clients', {
+                params: { q: searchTerm },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
-            })
-            .catch((err) => {
-                let detail = {
-                    detail: {
-                        type: "delete",
-                        message: err.response.data.message,
-                    },
-                };
-                OpenAlertMessage(detail);
             });
+            return response.data.data;
+        } catch (error) {
+            handleApiError(error);
+            return [];
+        }
     }
-    // end region
 
-    // region Tipos de pago
-    /**
-     * Función para obtener los tipos de pago
-     * @param {void}
-     * @returns {void}
-     */
-    function getPaymentTypes() {
-        axios
-            .get(`/api/paymenttypes`)
-            .then((response) => {
-                paymentTypes = response.data.data;
-                paymentTypesProcessed = paymentTypes.map((x) => ({
-                    label: x.paymentTypeDesc,
-                    value: x.id,
-                    proof_payments: x.proof_payments,
-                }));
-            })
-            .catch((err) => {
-                let detail = {
-                    detail: {
-                        type: "delete",
-                        message: err.response.data.message,
-                    },
-                };
-            });
-    }
     function handleChangePaymentType(event) {
         paymentTypesSelected = event.detail;
         filterProofPaymentTypes();
-    }
-    // end region
-
-    // region Clientes
-    /**
-     * Función para obtener los Clientes
-     * @param {void}
-     * @returns {void}
-     */
-    function getClients() {
-        axios
-            .get(`/api/persons?p_type_id=2`)
-            .then((response) => {
-                Clients = response.data.data;
-            })
-            .catch((err) => {
-                let detail = {
-                    detail: {
-                        type: "delete",
-                        message: err.response.data.message,
-                    },
-                };
-            });
     }
 
     /**
@@ -161,41 +100,49 @@
     function selectClient(item) {
         ClientsSelected = item.detail.person.id;
         searchTermClients = item.detail.label;
-    }
-    // end region
-
-    // region Alertas
-    function close() {
-        dispatch("close");
+        form.person_id = item.detail.person.id;
     }
 
+    // Alert and error handling
     function closeAlert() {
         openAlert = false;
     }
+    
     function openAlerts(message, type) {
         openAlert = true;
         alertType = type;
         alertMessage = message;
     }
-    function OpenAlertMessage(event) {
-        dispatch("message", event.detail);
+
+    function handleApiError(error) {
+        console.error('API Error:', error);
+        if (error.response?.data?.message) {
+            openAlerts(error.response.data.message, 'error');
+        } else {
+            openAlerts('Error de conexión', 'error');
+        }
     }
-    // end region
+
+    function handleValidationErrors(errors) {
+        const firstError = Object.values(errors)[0];
+        if (Array.isArray(firstError)) {
+            openAlerts(firstError[0], 'error');
+        } else {
+            openAlerts('Error de validación', 'error');
+        }
+    }
 
     function resetForm() {
-        person_id = "";
-        sale_date = date.toISOString().slice(0, 10);
-        sale_status = "";
-        sale_number = "";
+        form.reset();
         saleDetails = [];
         proofPaymentTypes = [];
         paymentTypesSelected = [];
-        tillsSelected = [];
-        ClientsSelected = [];
+        tillsSelected = userTills.length === 1 ? 
+            { value: userTills[0].id, label: userTills[0].till_name } : [];
+        ClientsSelected = '';
         searchTermClients = "";
-        searchTermPaymentTypes = "";
-        tillsSearchTerm = "";
-        errors = null;
+        tillsSearchTerm = userTills.length === 1 ? userTills[0].till_name : "";
+        form.sale_number = formConfig.saleNumber;
     }
 
     function OpenClientForm() {
@@ -238,14 +185,18 @@
 
     onMount(() => {
         window.addEventListener("keydown", handleKeydown);
-        getPaymentTypes();
-        getClients();
-        getTillsByUser();
-        if (edit == true) {
-            id = item.id;
-            person_id = item.person_id;
-            sale_date = item.sale_date;
-            sale_status = item.sale_status;
+        
+        // Initialize form with pre-loaded data
+        if (edit && item) {
+            saleDetails = item.sale_details || [];
+            if (item.proofPayments) {
+                // Reconstruct payment types and proof payments from existing data
+                paymentTypesSelected = item.proofPayments.map(pp => ({
+                    value: pp.payment_type_id,
+                    label: pp.payment_type?.paymentTypeDesc || 'Unknown'
+                }));
+                filterProofPaymentTypes();
+            }
         }
     });
     onDestroy(() => {
@@ -268,14 +219,14 @@
         showPersonSearchForm = false;
     }
 
-    function filterProofPaymentTypes(event) {
-        if (paymentTypesSelected != null) {
+    function filterProofPaymentTypes() {
+        if (paymentTypesSelected != null && paymentTypesSelected.length > 0) {
             proofPaymentTypes = paymentTypes
                 .filter((x) =>
                     paymentTypesSelected.some((pt) => pt.value === x.id),
                 )
                 .flatMap((x) =>
-                    x.proofPayments.map((p) => ({
+                    x.proof_payments.map((p) => ({
                         label: p.proof_payment_desc,
                         paymentTypeDesc: x.paymentTypeDesc,
                         value: p.id,
@@ -283,64 +234,42 @@
                         td_pr_desc: "",
                     })),
                 );
+        } else {
+            proofPaymentTypes = [];
         }
     }
 
-    async function handleCreateObject() {
-        console.log("Creating object...");
-        try {
-            const res = await axios.post(`/api/storesale`, {
-                user_id: user.id,
-                till_id: tillsSelected.value,
-                person_id: ClientsSelected,
-                sale_date,
-                sale_number,
-                sale_details: saleDetails.map((x) => ({
-                    product_id: x.id,
-                    sd_qty: x.quantity,
-                    sd_amount: x.product_selling_price,
-                })),
-                proofPayments: proofPaymentTypes,
+    // Form submission with Inertia
+    function handleSubmit() {
+        // Update form data with current values
+        form.person_id = ClientsSelected;
+        form.till_id = tillsSelected.value;
+        form.sale_details = saleDetails.map((x) => ({
+            product_id: x.id,
+            sd_qty: x.quantity,
+            sd_amount: x.product_selling_price,
+        }));
+        form.proofPayments = proofPaymentTypes;
+
+        if (edit) {
+            form.put(`/sales/${item.id}`, {
+                onSuccess: (page) => {
+                    openAlerts('Venta actualizada exitosamente', 'success');
+                },
+                onError: (errors) => {
+                    handleValidationErrors(errors);
+                }
             });
-            openAlerts(res.data.message, "success");
-            resetForm();
-        } catch (err) {
-            err.response?.data?.errors
-                ? ((errors = err.response.data.errors),
-                  openAlerts("Datos enviados no son correctos", "error"))
-                : ((errors = err.response.data?.error
-                      ? err.response.data.error
-                      : null),
-                  openAlerts(err.response.data.message, "error"));
-        }
-    }
-
-    async function handleUpdateObject() {
-        try {
-            const res = await axios.put(
-                `/api/sales/${id}`,
-                { person_id, sale_date, sale_status },
-                config,
-            );
-            let detail = {
-                detail: {
-                    type: "success",
-                    message: res.data.message,
+        } else {
+            form.post('/sales', {
+                onSuccess: (page) => {
+                    openAlerts('Venta creada exitosamente', 'success');
+                    resetForm();
                 },
-            };
-            OpenAlertMessage(detail);
-            close();
-        } catch (err) {
-            errors = err.response.data.details
-                ? err.response.data.details
-                : null;
-            let detail = {
-                detail: {
-                    type: "error",
-                    message: err.response.data.message,
-                },
-            };
-            OpenAlertMessage(detail);
+                onError: (errors) => {
+                    handleValidationErrors(errors);
+                }
+            });
         }
     }
 
@@ -387,7 +316,6 @@
             on:ClientSelected={selectClient}
             from={"sales"}
             edit={false}
-            on:message={OpenAlertMessage}
             on:close={() => CloseClientForm()}
         />
     </Modal>
@@ -408,15 +336,11 @@
 <h3 class="mb-4 text-center text-2xl">
     {#if edit == true}Actualizar Venta{:else}Nueva Venta{/if}
 </h3>
-<form
-    on:submit|preventDefault={edit == true
-        ? handleUpdateObject()
-        : handleCreateObject()}
->
+<form on:submit|preventDefault={handleSubmit}>
     <div class="grid grid-cols-12">
         <div class="col-span-3 pr-2">
             <Textfield
-                errors={errors?.client ? errors.client[0] : []}
+                errors={form.errors?.person_id ? { message: form.errors.person_id } : null}
                 label="Cliente"
                 type="text"
                 bind:value={searchTermClients}
@@ -449,9 +373,9 @@
                 required={true}
                 type="text"
                 mask="999-999-9999999"
-                bind:value={sale_number}
-                errors={errors?.sale_number
-                    ? { message: errors.sale_number[0] }
+                bind:value={form.sale_number}
+                errors={form.errors?.sale_number
+                    ? { message: form.errors.sale_number }
                     : null}
             />
         </div>
@@ -460,9 +384,9 @@
                 label="Fecha"
                 required={true}
                 type="date"
-                bind:value={sale_date}
-                errors={errors?.sale_date
-                    ? { message: errors.sale_date[0] }
+                bind:value={form.sale_date}
+                errors={form.errors?.sale_date
+                    ? { message: form.errors.sale_date }
                     : null}
             />
         </div>
@@ -470,14 +394,14 @@
     <div class="grid grid-cols-12 mt-4 gap-4">
         <div class="col-span-4">
             <Autocomplete
-                {errors}
+                errors={form.errors?.till_id ? { message: form.errors.till_id } : null}
                 label="Caja"
                 bind:item_selected={tillsSelected}
-                items={tills.map((x) => ({ label: x.till_name, value: x.id }))}
+                items={userTills.map((x) => ({ label: x.till_name, value: x.id }))}
                 searchTerm={tillsSearchTerm}
-                showDropdown={showDropdownPaymentTypes}
-                loading={loadingPaymentTypes}
-                filterdItem={tills}
+                showDropdown={false}
+                loading={false}
+                filterdItem={userTills}
             />
         </div>
         <div class="col-span-4">
@@ -488,9 +412,9 @@
                 on:change={handleChangePaymentType}
             />
             <label for="paymentTypes">
-                {#if errors?.proofPayments}
+                {#if form.errors?.proofPayments}
                     <span class="mt-2 text-base text-red-500 block"
-                        >{errors.proofPayments[0]}</span
+                        >{form.errors.proofPayments}</span
                     >
                 {/if}
             </label>
@@ -502,16 +426,16 @@
                         label={"Monto " + item.paymentTypeDesc}
                         bind:value={item.amount}
                         type="number"
-                        errors={errors?.td_pr_desc
-                            ? { message: errors.td_pr_desc[0] }
+                        errors={form.errors?.amount
+                            ? { message: form.errors.amount }
                             : null}
                     />
                     {#if item.paymentTypeDesc !== "Efectivo"}
                         <Textfield
                             label={item.label}
                             bind:value={item.td_pr_desc}
-                            errors={errors?.td_pr_desc
-                                ? { message: errors.td_pr_desc[0] }
+                            errors={form.errors?.td_pr_desc
+                                ? { message: form.errors.td_pr_desc }
                                 : null}
                         />
                     {/if}
@@ -519,16 +443,18 @@
             {/each}
         {/if}
         <div class="col-span-12 flex justify-end gap-2 mt-4 mb-2">
-            <button class="btn btn-primary" type="submit"> Guardar </button>
-            <button class="btn btn-secondary" on:click={close}>
+            <button class="btn btn-primary" type="submit" disabled={form.processing}> 
+                {form.processing ? 'Guardando...' : 'Guardar'} 
+            </button>
+            <button class="btn btn-secondary" type="button" on:click={() => history.back()}>
                 Cancelar
             </button>
         </div>
     </div>
     <hr class="my-4" />
-    {#if errors?.sale_details}
+    {#if form.errors?.sale_details}
         <span class="mt-2 text-base text-red-500 block"
-            >{errors.sale_details[0]}</span
+            >{form.errors.sale_details}</span
         >
     {/if}
     <table class="table w-full">
@@ -603,8 +529,8 @@
                             label=""
                             type="number"
                             bind:value={item.product_selling_price}
-                            errors={errors?.product_selling_price
-                                ? { message: errors.product_selling_price[0] }
+                            errors={form.errors?.product_selling_price
+                                ? { message: form.errors.product_selling_price }
                                 : null}
                         />
                     </td>

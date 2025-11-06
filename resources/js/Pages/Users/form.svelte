@@ -1,115 +1,98 @@
 <script>
-	// @ts-nocheck
-	import axios from 'axios';
-	// import {getToken} from '../../services/authservice'
 	import { onMount } from 'svelte';
-	import { createEventDispatcher } from 'svelte';
+	import { useForm } from '@inertiajs/svelte';
 	import {Textfield} from '@components/FormComponents';
 
-	const dispatch = createEventDispatcher();
-	let id = 0;
-	let name = '';
-	let email = '';
-	export let edit;
-	export let item;
-	let errors = null;
-	let token = '';
-	let config = {
-		headers: {
-			authorization: `token: ${token}`,
-		},
-	}
-	function close() {
-		dispatch('close');
-	}
+	// Props from Inertia pre-loading
+	export let userContext = null;
+	export let formConfig = null;
+	export let mode = 'create';
+	export let edit = mode === 'edit';
+	export let item = null;
 
-	function OpenAlertMessage(event) {
-		dispatch('message', event.detail);
-	}
-
-	onMount(() => {
-
-		if (edit == true) {
-			id = item.id;
-			name = item.name;
-			email = item.email;
-		}
-
+	// Form state management with Inertia
+	let form = useForm({
+		name: item?.name || '',
+		email: item?.email || '',
+		person_id: item?.person_id || '',
+		password: '',
+		password_confirmation: ''
 	});
-	function handleCreateObject() {
-		
-		axios
-			.post(`/users`, {
-				name,
-				email
-			},config)
-			.then((res) => {
-				let detail = {
-					detail: {
-						type: 'success',
-						message: res.data.message
-					}
-				};
-				OpenAlertMessage(detail);
-				close();
-			}).catch((err) => {
-				errors = err.response.data.details ? err.response.data.details : null;
-				let detail = {
-					detail: {
-						type: 'delete',
-						message: err.response.data.message
-					}
-				};
-				OpenAlertMessage(detail);
+	// Form submission with Inertia
+	function handleSubmit() {
+		if (edit) {
+			form.put(`/users/${item.id}`, {
+				onSuccess: () => {
+					// Handle success - could redirect or show message
+					history.back();
+				},
+				onError: (errors) => {
+					console.error('Validation errors:', errors);
+				}
 			});
-	}
-	function handleUpdateObject() {
-		axios
-			.put(`/users/${id}`, {
-				name,
-				email
-			},config)
-			.then((res) => {
-				let detail = {
-					detail: {
-						type: 'success',
-						message: res.data.message
-					}
-				};
-				OpenAlertMessage(detail);
-				close();
-			}).catch((err) => {
-				errors = err.response.data.details ? err.response.data.details : null;
-				let detail = {
-					detail: {
-						type: 'delete',
-						message: err.response.data.message
-					}
-				};
-				OpenAlertMessage(detail);
+		} else {
+			form.post('/users', {
+				onSuccess: () => {
+					// Handle success - could redirect or show message
+					history.back();
+				},
+				onError: (errors) => {
+					console.error('Validation errors:', errors);
+				}
 			});
+		}
 	}
 </script>
 
-{#if edit == true}
-	<h3 class="mb-4 text-center text-2xl">Actualizar Usuario</h3>
-{:else}
-	<h3 class="mb-4 text-center text-2xl">Crear Usuario</h3>
-{/if}
-<!-- <form> -->
+<svelte:head>
+	<title>{edit ? "Actualizar Usuario" : "Crear Usuario"}</title>
+</svelte:head>
+
+<h3 class="mb-4 text-center text-2xl">
+	{edit ? "Actualizar Usuario" : "Crear Usuario"}
+</h3>
+
+<form on:submit|preventDefault={handleSubmit}>
 	<Textfield 
 		label="Nombre" 
-		bind:value={name} 
-		errors={errors?.name ? {message:errors.name[0]} : null} 
+		bind:value={form.name} 
+		errors={form.errors?.name ? {message: form.errors.name} : null} 
+		required={true}
 	/>
 	<Textfield 
 		label="Correo" 
-		bind:value={email} 
-		errors={errors?.email ? {message:errors.email[0]} : null} 
+		type="email"
+		bind:value={form.email} 
+		errors={form.errors?.email ? {message: form.errors.email} : null} 
+		required={true}
 	/>
-	<button
-		class="btn btn-primary"
-		on:click={edit == true ? handleUpdateObject() : handleCreateObject()}>Guardar</button
-	>
-	<button class="btn btn-secondary" on:click={close}>Cancelar</button>
-<!-- </form> -->
+	
+	{#if !edit}
+		<Textfield 
+			label="Contraseña" 
+			type="password"
+			bind:value={form.password} 
+			errors={form.errors?.password ? {message: form.errors.password} : null} 
+			required={true}
+		/>
+		<Textfield 
+			label="Confirmar Contraseña" 
+			type="password"
+			bind:value={form.password_confirmation} 
+			errors={form.errors?.password_confirmation ? {message: form.errors.password_confirmation} : null} 
+			required={true}
+		/>
+	{/if}
+
+	<div class="flex gap-2 mt-4">
+		<button
+			class="btn btn-primary"
+			type="submit"
+			disabled={form.processing}>
+			{form.processing ? 'Guardando...' : 'Guardar'}
+		</button>
+		<button class="btn btn-secondary" type="button" on:click={() => history.back()}>
+			Cancelar
+		</button>
+	</div>
+</form>

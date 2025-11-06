@@ -31,7 +31,7 @@
 	let total_items;
 	let current_page = 1;
 	let items_per_page = '10';
-	let url = `${appUrl}/products?`;
+	let url = `${appUrl}/products/?`;
 
 	function updateData() {
 		fetchData(current_page, items_per_page, orderBy, order);

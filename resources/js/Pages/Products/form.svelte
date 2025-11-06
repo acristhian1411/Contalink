@@ -1,211 +1,81 @@
 <script>
-	// @ts-nocheck
-	import axios from 'axios';
-	// import {getToken} from '../../services/authservice'
 	import { onMount } from 'svelte';
-	import { createEventDispatcher } from 'svelte';
+	import { useForm } from '@inertiajs/svelte';
 	import {Textfield, Autocomplete} from '@components/FormComponents';
 	import {formatNumber, unformatNumber} from '@components/utilities/NumberFormat.js';
 
-	const dispatch = createEventDispatcher();
-	let id = 0;
-	let product_name = '';
-	let product_desc = '';
-	let product_cost_price = '';
-	let product_quantity = '';
-	let product_profit_percent = '';
-	let product_selling_price = '';
-	let product_barcode = '';
-	let product_image = '';
-	let category_id = '';
-	let iva_type_id = '';
-	let brand_id = '';
-	export let edit;
-	export let item;
-	let errors = null;
-	let iva_types = [];
-	let brands = [];
-	let measurements = [];
-	let categories = [];
-	let iva_type_selected ;
-	let brand_selected ;
-	let measurement_selected ;
-	let category_selected ;
-	let searchTerm = '';
-	let showDropdown = false;
-	let loading = false;
-	let filteredIvaTypes = [];
-	let filteredBrands = [];
-	let filteredCategories = [];
-	let token = '';
-	let config = {
-		headers: {
-			authorization: `token: ${token}`,
-		},
-	}
-	function close() {
-		dispatch('close');
-	}
+	// Props from Inertia pre-loading
+	export let staticData;
+	export let userContext = null;
+	export let formConfig = null;
+	export let mode = 'create';
+	export let edit = mode === 'edit';
+	export let item = null;
 
-	function getCategories() {
-		axios.get(`/api/categories`).then((response) => {
-			categories = response.data.data;
-		}).catch((err) => {
-			let detail = {
-				detail: {
-					type: 'delete',
-					message: err.response.data.message
-				}
-			};
-		});
-	}
+	// Destructure static data from props
+	const { categories, brands, ivaTypes, measurementUnits } = staticData;
 
-	function getMeasurements(){
-		axios.get(`/api/measurement-units`).then((response) => {
-			measurements = response.data.data;
-		}).catch((err) => {
-			let detail = {
-				detail: {
-					type: 'delete',
-					message: err.response.data.message
-				}
-			};
-		});
-	}
-
-	function getBrands() {
-		axios.get(`/api/brands`).then((response) => {
-			brands = response.data.data;
-		}).catch((err) => {
-			let detail = {
-				detail: {
-					type: 'delete',
-					message: err.response.data.message
-				}
-			};
-		});
-	}
-
-	function getIvaTypes() {
-		axios.get(`/api/ivatypes`).then((response) => {
-			iva_types = response.data.data;
-		}).catch((err) => {
-			let detail = {
-				detail: {
-					type: 'delete',
-					message: err.response.data.message
-				}
-			};
-		});
-	}
-
-	function OpenAlertMessage(event) {
-		dispatch('message', event.detail);
-	}
-
-	onMount(() => {
-		getCategories();
-		getMeasurements()
-		getBrands();
-		getIvaTypes();
-		if (edit == true) {
-			id = item.id;
-			product_name = item.product_name;
-			product_desc = item.product_desc;
-			product_image = item.product_image;
-			product_barcode = item.product_barcode;
-			product_cost_price = item.product_cost_price;
-			product_quantity = item.product_quantity;
-			product_selling_price = item.product_selling_price;
-			brand_id = item.brand_id;
-			iva_type_id = item.iva_type_id;
-			category_id = item.category_id;
-		}
+	// Form state management with Inertia
+	let form = useForm({
+		product_name: item?.product_name || '',
+		product_desc: item?.product_desc || '',
+		product_cost_price: item?.product_cost_price || '',
+		product_quantity: item?.product_quantity || '',
+		product_selling_price: item?.product_selling_price || '',
+		product_barcode: item?.product_barcode || '',
+		product_image: item?.product_image || '',
+		category_id: item?.category_id || '',
+		iva_type_id: item?.iva_type_id || '',
+		brand_id: item?.brand_id || '',
+		measurement_unit_id: item?.measurement_unit_id || ''
 	});
-	function handleCreateObject(event) {
-		event.preventDefault();
-		console.log(iva_type_selected)
-		axios
-			.post(`/api/products`, {
-				product_name,
-				product_desc,
-				product_cost_price,
-				product_quantity:parseFloat(product_quantity),
-				product_image,
-				product_barcode,
-				product_selling_price,
-				category_id: category_selected?.value ?? null,
-				iva_type_id: iva_type_selected?.value ?? null,
-				measurement_unit_id: measurement_selected?.value ?? null,
-				brand_id: brand_selected?.value ?? null
-			})
-			.then((res) => {
-				let detail = {
-					detail: {
-						type: 'success',
-						message: res.data.message
-					}
-				};
-				OpenAlertMessage(detail);
-				close();
-			}).catch((err) => {
-				errors = err.response.data.details ? err.response.data.details : null;
-				let detail = {
-					detail: {
-						type: 'delete',
-						message: err.response.data.message
-					}
-				};
-				OpenAlertMessage(detail);
-			});
-	}
 
-	function handleUpdateObject(event) {
-		event.preventDefault();
-		axios
-			.put(`/api/products/${id}`, {
-				product_name,
-				product_desc,
-				product_cost_price,
-				product_quantity,
-				product_image,
-				product_barcode,
-				product_selling_price,
-				category_id: category_selected?.value? category_selected.value : null,
-				iva_type_id: iva_type_selected?.value? iva_type_selected.value : null,
-				brand_id: brand_selected?.value? brand_selected.value : null
-			},config)
-			.then((res) => {
-				let detail = {
-					detail: {
-						type: 'success',
-						message: res.data.message
-					}
-				};
-				OpenAlertMessage(detail);
-				close();
-			}).catch((err) => {
-				errors = err.response.data.details ? err.response.data.details : null;
-				let detail = {
-					detail: {
-						type: 'delete',
-						message: err.response.data.message
-					}
-				};
-				OpenAlertMessage(detail);
+	// UI state variables
+	let product_profit_percent = '';
+	let iva_type_selected = item ? { value: item.iva_type_id, label: item.iva_type?.iva_type_desc } : null;
+	let brand_selected = item ? { value: item.brand_id, label: item.brand?.brand_name } : null;
+	let measurement_selected = item ? { value: item.measurement_unit_id, label: item.measurement_unit?.unit_name } : null;
+	let category_selected = item ? { value: item.category_id, label: item.category?.cat_desc } : null;
+	// Form submission with Inertia
+	function handleSubmit() {
+		// Update form data with selected values
+		form.category_id = category_selected?.value || null;
+		form.iva_type_id = iva_type_selected?.value || null;
+		form.measurement_unit_id = measurement_selected?.value || null;
+		form.brand_id = brand_selected?.value || null;
+
+		if (edit) {
+			form.put(`/products/${item.id}`, {
+				onSuccess: () => {
+					history.back();
+				},
+				onError: (errors) => {
+					console.error('Validation errors:', errors);
+				}
 			});
+		} else {
+			form.post('/products', {
+				onSuccess: () => {
+					history.back();
+				},
+				onError: (errors) => {
+					console.error('Validation errors:', errors);
+				}
+			});
+		}
 	}
+	// Helper functions for autocomplete options
 	function Categories(){
 		return categories.map(
 			category => ({
-				label: category.category_name,
+				label: category.cat_desc,
 				value: category.id
 			})
 		)
 	}
 
 	function Measurements(){
-		return measurements.map(
+		return measurementUnits.map(
 			measurement => ({
 				label: measurement.unit_name,
 				value: measurement.id
@@ -221,14 +91,16 @@
 			})
 		)
 	}
+	
 	function IvaTypes(){
-		return iva_types.map(
+		return ivaTypes.map(
 			iva_type => ({
-				label: iva_type.iva_type_name,
+				label: iva_type.iva_type_desc,
 				value: iva_type.id
 			})
 		)
 	}
+	
 	function handleInput(value) {
 		if(value == null || value == undefined || value == ''){
 			product_profit_percent = 0;
@@ -236,110 +108,123 @@
 		}
 		product_profit_percent = value;
 		// Calcula el precio de venta basado en el precio de costo y el porcentaje de ganancias
-		let porcentaje = parseInt(parseFloat(product_cost_price) + (parseFloat(product_cost_price) * parseFloat(product_profit_percent) / 100))
-		product_selling_price = porcentaje.toString();
+		let porcentaje = parseInt(parseFloat(form.product_cost_price) + (parseFloat(form.product_cost_price) * parseFloat(product_profit_percent) / 100))
+		form.product_selling_price = porcentaje.toString();
 	}
 </script>
 
-{#if edit == true}
-	<h3 class="mb-4 text-center text-2xl">Actualizar Producto</h3>
-{:else}
-	<h3 class="mb-4 text-center text-2xl">Crear Producto</h3>
-{/if}
-<form on:submit={edit == true ? handleUpdateObject : handleCreateObject}>
+<svelte:head>
+	<title>{edit ? "Actualizar Producto" : "Crear Producto"}</title>
+</svelte:head>
+
+<h3 class="mb-4 text-center text-2xl">
+	{edit ? "Actualizar Producto" : "Crear Producto"}
+</h3>
+
+<form on:submit|preventDefault={handleSubmit}>
 	<div class="grid grid-cols-2 gap-4">
-    <Textfield 
-		label="Nombre" 
-		required={true}
-		bind:value={product_name} 
-		errors={errors?.product_name ? {message:errors.product_name[0]} : null} 
-	/>
-	<Textfield 
-		label="Descripcion" 
-		bind:value={product_desc} 
-		errors={errors?.product_desc ? {message:errors.product_desc[0]} : null} 
-	/>
-	<Textfield 
-		label="Precio de costo" 
-		type="number"
-		bind:value={product_cost_price} 
-		min="0"
-		errors={errors?.product_cost_price ? {message:errors.product_cost_price[0]} : null} 
-	/>
-	<Textfield
-		label="Porcentaje de ganancias" 
-		type="number"
-		customFN={handleInput}
-		errors={errors?.product_profit_percent ? {message:errors.product_profit_percent[0]} : null} 
-	/>
-	<Textfield 
-		label="Precio de venta" 
-		type="number"
-		bind:value={product_selling_price} 
-		errors={errors?.product_selling_price ? {message:errors.product_selling_price[0]} : null} 
-	/>
-	<Textfield 
-		label="Cantidad" 
-		type="number"
-		min="0"
-		bind:value={product_quantity} 
-		errors={errors?.product_quantity ? {message:errors.product_quantity[0]} : null} 
-	/>
-	<Textfield 
-		label="Código de barras" 
-		bind:value={product_barcode} 
-		errors={errors?.product_barcode ? {message:errors.product_barcode[0]} : null} 
-	/>
-	<Textfield
-		label="Imagen"
-		bind:value={product_image}
-		errors={errors?.product_image ? {message:errors.product_image[0]} : null}
-	/>
-	<Autocomplete
-		errors={errors}
-		label="Categoría"
-		bind:item_selected={category_selected}
-		items={categories.map(x => ({label: x.cat_desc, value: x.id}))}
-		searchTerm={searchTerm}
-		showDropdown={showDropdown}
-		loading={loading}
-		filterdItem={Categories()}
-	/>
-	<Autocomplete
-		errors={errors}
-		label="Unidad de medida"
-		bind:item_selected={measurement_selected}
-		items={measurements.map(x => ({label: x.unit_name, value: x.id}))}
-		searchTerm={searchTerm}
-		showDropdown={showDropdown}
-		loading={loading}
-		filterdItem={Measurements()}
-	/>
-	<Autocomplete
-		errors={errors}
-		label="Marca"
-		bind:item_selected={brand_selected}
-		items={brands.map(x => ({label: x.brand_name, value: x.id}))}
-		searchTerm={searchTerm}
-		showDropdown={showDropdown}
-		loading={loading}
-		filterdItem={Brands()}
-	/>
-	<Autocomplete
-		errors={errors}
-		label="Tipo IVA"
-		bind:item_selected={iva_type_selected}
-		items={iva_types.map(x => ({label: x.iva_type_desc, value: x.id}))}
-		searchTerm={searchTerm}
-		showDropdown={showDropdown}
-		loading={loading}
-		filterdItem={IvaTypes()}
-	/>
+		<Textfield 
+			label="Nombre" 
+			required={true}
+			bind:value={form.product_name} 
+			errors={form.errors?.product_name ? {message: form.errors.product_name} : null} 
+		/>
+		<Textfield 
+			label="Descripcion" 
+			bind:value={form.product_desc} 
+			errors={form.errors?.product_desc ? {message: form.errors.product_desc} : null} 
+		/>
+		<Textfield 
+			label="Precio de costo" 
+			type="number"
+			step="0.01"
+			bind:value={form.product_cost_price} 
+			min="0"
+			errors={form.errors?.product_cost_price ? {message: form.errors.product_cost_price} : null} 
+		/>
+		<Textfield
+			label="Porcentaje de ganancias" 
+			type="number"
+			step="0.01"
+			customFN={handleInput}
+			errors={form.errors?.product_profit_percent ? {message: form.errors.product_profit_percent} : null} 
+		/>
+		<Textfield 
+			label="Precio de venta" 
+			type="number"
+			step="0.01"
+			bind:value={form.product_selling_price} 
+			errors={form.errors?.product_selling_price ? {message: form.errors.product_selling_price} : null} 
+		/>
+		<Textfield 
+			label="Cantidad" 
+			type="number"
+			step="0.001"
+			min="0"
+			bind:value={form.product_quantity} 
+			errors={form.errors?.product_quantity ? {message: form.errors.product_quantity} : null} 
+		/>
+		<Textfield 
+			label="Código de barras" 
+			bind:value={form.product_barcode} 
+			errors={form.errors?.product_barcode ? {message: form.errors.product_barcode} : null} 
+		/>
+		<Textfield
+			label="Imagen"
+			bind:value={form.product_image}
+			errors={form.errors?.product_image ? {message: form.errors.product_image} : null}
+		/>
+		<Autocomplete
+			errors={form.errors?.category_id ? {message: form.errors.category_id} : null}
+			label="Categoría"
+			bind:item_selected={category_selected}
+			items={Categories()}
+			searchTerm=""
+			showDropdown={false}
+			loading={false}
+			filterdItem={Categories()}
+		/>
+		<Autocomplete
+			errors={form.errors?.measurement_unit_id ? {message: form.errors.measurement_unit_id} : null}
+			label="Unidad de medida"
+			bind:item_selected={measurement_selected}
+			items={Measurements()}
+			searchTerm=""
+			showDropdown={false}
+			loading={false}
+			filterdItem={Measurements()}
+		/>
+		<Autocomplete
+			errors={form.errors?.brand_id ? {message: form.errors.brand_id} : null}
+			label="Marca"
+			bind:item_selected={brand_selected}
+			items={Brands()}
+			searchTerm=""
+			showDropdown={false}
+			loading={false}
+			filterdItem={Brands()}
+		/>
+		<Autocomplete
+			errors={form.errors?.iva_type_id ? {message: form.errors.iva_type_id} : null}
+			label="Tipo IVA"
+			bind:item_selected={iva_type_selected}
+			items={IvaTypes()}
+			searchTerm=""
+			showDropdown={false}
+			loading={false}
+			filterdItem={IvaTypes()}
+		/>
 	</div>
-	<button
-		type="submit"
-		class="btn btn-primary"
-		>Guardar</button
-	>
-	<button class="btn btn-secondary" on:click={close}>Cancelar</button>
+	
+	<div class="flex gap-2 mt-4">
+		<button
+			type="submit"
+			class="btn btn-primary"
+			disabled={form.processing}>
+			{form.processing ? 'Guardando...' : 'Guardar'}
+		</button>
+		<button class="btn btn-secondary" type="button" on:click={() => history.back()}>
+			Cancelar
+		</button>
+	</div>
 </form>

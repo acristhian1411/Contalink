@@ -8,12 +8,12 @@
   
   <div class="grid grid-cols-2 gap-6 p-8">
     
-    <button class="flex flex-col items-center justify-center p-6 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700" on:click={() => goTo('/create-sales')}>
+    <button class="flex flex-col items-center justify-center p-6 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700" on:click={() => goTo('/sales/create')}>
       <!-- SVG Icon for Ventas -->
       <CartIcon/>
       <span>Ventas</span>
     </button>
-    <button class="flex flex-col items-center justify-center p-6 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700" on:click={() => goTo('/create-purchase')}>
+    <button class="flex flex-col items-center justify-center p-6 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700" on:click={() => goTo('/purchases/create')}>
       <!-- SVG Icon for Compras -->
       <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zm-2 11H8a2 2 0 00-2 2v1h12v-1a2 2 0 00-2-2z" />
@@ -22,7 +22,7 @@
     </button>
   
   
-    <button class="flex flex-col items-center justify-center p-6 bg-purple-600 text-white rounded-lg shadow-md hover:bg-purple-700" on:click={() => goTo('/create-refunds')}>
+    <button class="flex flex-col items-center justify-center p-6 bg-purple-600 text-white rounded-lg shadow-md hover:bg-purple-700" on:click={() => goTo('/refunds/create')}>
       <!-- SVG Icon for Productos -->
         <DevolutionIcon
           className="w-12 h-12 mb-2"

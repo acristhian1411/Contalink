@@ -1,260 +1,408 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TillTypes\TillTypeController;
-use App\Http\Controllers\PersonTypes\PersonTypesController;
 use App\Http\Controllers\AccountPlans\AccountPlanController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Brands\BrandController;
 use App\Http\Controllers\Categories\CategoriesController;
 use App\Http\Controllers\Cities\CitiesController;
+use App\Http\Controllers\ContactTypes\ContactTypesController;
 use App\Http\Controllers\Countries\CountriesController;
 use App\Http\Controllers\IvaTypes\IvaTypeController;
+use App\Http\Controllers\MeasurementUnits\MeasurementUnitsController;
 use App\Http\Controllers\PaymentTypes\PaymentTypesController;
+use App\Http\Controllers\Permissions\PermissionsController;
 use App\Http\Controllers\Persons\PersonsController;
+use App\Http\Controllers\PersonTypes\PersonTypesController;
 use App\Http\Controllers\Products\ProductsController;
-use App\Http\Controllers\States\StatesController;
-use App\Http\Controllers\Tills\TillsController;
-use App\Http\Controllers\TillDetails\TillDetailsController;
-use App\Http\Controllers\TillDetailProofPayments\TillDetailProofPaymentsController;
 use App\Http\Controllers\ProofPaypments\ProofPaymentsController;
-use App\Http\Controllers\Sales\SalesController;
-use App\Http\Controllers\Sales\SalesReportController;
-use App\Http\Controllers\SalesDetails\SalesDetailsController;
-use App\Http\Controllers\Sales\SaleStoreController;
-use App\Http\Controllers\Sales\SaleDeleteController;
+use App\Http\Controllers\Purchases\PurchaseDeleteController;
 use App\Http\Controllers\Purchases\PurchasesController;
 use App\Http\Controllers\Purchases\PurchasesReportController;
-use App\Http\Controllers\Purchases\PurchaseDeleteController;
-use App\Http\Controllers\PurchasesDetails\PurchasesDetailsController;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Roles\RolesController;
-use App\Http\Controllers\Permissions\PermissionsController;
-use App\Http\Controllers\Users\UsersController;
-use App\Http\Controllers\Brands\BrandController;
-use App\Http\Controllers\ContactTypes\ContactTypesController;
 use App\Http\Controllers\Purchases\PurchaseStoreController;
-use App\Http\Controllers\MeasurementUnits\MeasurementUnitsController;
+use App\Http\Controllers\PurchasesDetails\PurchasesDetailsController;
+use App\Http\Controllers\RefundDetails\RefundDetailsController;
+use App\Http\Controllers\Refunds\RefundsController;
+use App\Http\Controllers\Roles\RolesController;
+use App\Http\Controllers\Sales\SaleDeleteController;
+use App\Http\Controllers\Sales\SalesController;
+use App\Http\Controllers\Sales\SalesReportController;
+use App\Http\Controllers\Sales\SaleStoreController;
+use App\Http\Controllers\SalesDetails\SalesDetailsController;
+use App\Http\Controllers\States\StatesController;
+use App\Http\Controllers\TillDetailProofPayments\TillDetailProofPaymentsController;
+use App\Http\Controllers\TillDetails\TillDetailsController;
+use App\Http\Controllers\Tills\TillsController;
 use App\Http\Controllers\TillsProcess\TillsProcessController;
 use App\Http\Controllers\TillsTransfers\TillsTransfersController;
-use App\Http\Controllers\Refunds\RefundsController;
-use App\Http\Controllers\RefundDetails\RefundDetailsController;
+use App\Http\Controllers\TillTypes\TillTypeController;
+use App\Http\Controllers\Users\UsersController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+/*
+|--------------------------------------------------------------------------
+| API Routes - Secured with Sanctum Authentication
+|--------------------------------------------------------------------------
+|
+| All API routes are protected with Sanctum authentication and rate limiting.
+| These routes are primarily for:
+| 1. Dynamic data operations (search, real-time updates)
+| 2. AJAX operations that cannot be handled via Inertia pre-loading
+| 3. Mobile app or external API access
+|
+| Static data should be pre-loaded via Web controllers using Inertia.js
+|
+*/
 
+// ========================================
+// SANCTUM CSRF COOKIE ENDPOINT
+// ========================================
+Route::get('/sanctum/csrf-cookie', function () {
+    return response()->json(['message' => 'CSRF cookie set']);
+})->middleware('web');
 
+// ========================================
+// AUTHENTICATION ENDPOINTS (Stricter Rate Limiting)
+// ========================================
+Route::middleware(['throttle:5,1'])->group(function () {
+    // Registration endpoint - secured and requires admin permission
+    Route::post('/register', [AuthController::class, 'create'])
+        ->middleware(['auth:sanctum', 'permission:users.create'])
+        ->name('api.register');
+});
 
-Route::get('/roles', [RolesController::class, 'index'])->summary('Get list of roles with pagination.');
-Route::get('/roles/{id}', [RolesController::class, 'show'])->description('Show a role.');
-Route::post('/roles', [RolesController::class, 'store']);
-Route::put('/roles/{id}', [RolesController::class, 'update'])->description('Update a role.');
-Route::delete('/roles/{id}', [RolesController::class, 'destroy'])->description('Delete a role.');
-Route::post('/roles/{roleId}/permissions', [RolesController::class, 'assignPermissionsToRole']);
-Route::delete('/roles/{roleId}/permissions', [RolesController::class, 'removePermissionsFromRole']);
+// ========================================
+// PROTECTED API ROUTES (Standard Rate Limiting: 60 requests per minute)
+// ========================================
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+    
+    // ========================================
+    // USER CONTEXT AND AUTHENTICATION
+    // ========================================
+    Route::get('/user', function (Request $request) {
+        return $request->user()->load(['person', 'roles', 'permissions']);
+    })->name('api.user');
 
-Route::get('/users', [UsersController::class, 'index'])->description('Get list of users with pagination.');
-Route::get('/users/{id}', [UsersController::class, 'show'])->description('Show a user.');
-Route::get('/users/{id}/roles', [UsersController::class, 'showPermissionsByRole'])->description('Show permissions for a role');
-Route::get('/users/{id}/rolesnotcontain', [UsersController::class, 'showPermissionsNotContainRole'])->description('Show permissions for a role');
-Route::post('/users/{id}/assign-role', [UsersController::class, 'assignRole']);
+    // ========================================
+    // DYNAMIC SEARCH ENDPOINTS (For AJAX operations)
+    // ========================================
+    Route::prefix('search')->name('api.search.')->group(function () {
+        Route::get('/clients', [PersonsController::class, 'search'])
+            ->middleware('permission:persons.index')
+            ->name('clients');
+            
+        Route::get('/products', [ProductsController::class, 'search'])
+            ->middleware('permission:products.index')
+            ->name('products');
+            
+        Route::get('/persons-by-type/{type}', [PersonsController::class, 'searchPerType'])
+            ->middleware('permission:persons.index')
+            ->name('persons-by-type');
+    });
 
-Route::get('/permissions', [PermissionsController::class, 'index'])->description('Get list of permissions with pagination.');
-Route::get('/permissions/{id}', [PermissionsController::class, 'show'])->description('Show a permission.');
-Route::get('/permissions/{id}/roles', [PermissionsController::class, 'showPermissionsByRole'])->description('Show permissions for a role');
-Route::get('/permissions/{id}/rolesnotcontain', [PermissionsController::class, 'showPermissionsNotContainRole'])->description('Show permissions for a role');
+    // ========================================
+    // REAL-TIME DATA ENDPOINTS
+    // ========================================
+    Route::prefix('real-time')->name('api.real-time.')->group(function () {
+        // Till amounts for purchase validation
+        Route::get('/tills/{id}/amount', [TillsController::class, 'showTillAmount'])
+            ->middleware('permission:tills.show')
+            ->name('till-amount');
+            
+        // Tills by user for form pre-population
+        Route::get('/tills/by-person/{id}', [TillsController::class, 'showTillsByUser'])
+            ->middleware('permission:tills.index')
+            ->name('tills-by-person');
+            
+        // Cities by state for geographic forms
+        Route::get('/cities/by-state/{id}', [CitiesController::class, 'cityByStateId'])
+            ->name('cities-by-state');
+            
+        // Cities by country
+        Route::get('/cities/by-country/{id}', [CitiesController::class, 'cityByCountryId'])
+            ->name('cities-by-country');
+            
+        // States by country
+        Route::get('/states/by-country/{id}', [StatesController::class, 'getStatesByCountry'])
+            ->name('states-by-country');
+    });
 
-// Route::post('/login', [AuthController::class, 'login'])->name('login');
-// Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+    // ========================================
+    // SALES API OPERATIONS (Complex operations that need API access)
+    // ========================================
+    Route::prefix('sales')->name('api.sales.')->middleware('permission:sales.index')->group(function () {
+        // Sales listing with pagination and filters
+        Route::get('/', [SalesController::class, 'index'])->name('index');
+        
+        // Sales search by number
+        Route::get('/search/{searchTerm}', [SalesController::class, 'searchByNumber'])
+            ->name('search');
+            
+        // Individual sale details
+        Route::get('/{id}', [SalesController::class, 'show'])
+            ->middleware('permission:sales.show')
+            ->name('show');
+            
+        // Sales validation (for complex business rules)
+        Route::post('/validate', [SalesController::class, 'validateSale'])
+            ->middleware('permission:sales.create')
+            ->name('validate');
+            
+        // Sales creation via API (for mobile or external systems)
+        Route::post('/', [SaleStoreController::class, 'store'])
+            ->middleware('permission:sales.create')
+            ->name('store');
+            
+        // Sales deletion with stock reversal
+        Route::delete('/{id}', [SaleDeleteController::class, 'destroy'])
+            ->middleware('permission:sales.delete')
+            ->name('delete');
+            
+        // Sales reports
+        Route::get('/reports/data', [SalesReportController::class, 'getSalesReport'])
+            ->middleware('permission:reports.show')
+            ->name('reports.data');
+    });
 
-Route::post('/register', [AuthController::class, 'create'])->name('register');
-//routes for tilltyoes
-Route::get('tilltypes', [TillTypeController::class, 'index'])->description('Get list of till types with pagination.');
-Route::post('tilltypes', [TillTypeController::class, 'store'])->description('Store a new till type.');
-Route::put('tilltypes/{id}', [TillTypeController::class, 'update'])->description('Update a till type.');
-Route::get('tilltypes/{id}', [TillTypeController::class, 'show'])->description('Show a till type.');
-Route::delete('tilltypes/{id}', [TillTypeController::class, 'destroy'])->description('Delete a till type.');
-//routes for personTypes
-Route::get('persontypes', [PersonTypesController::class, 'index'])->description('Get list of person types with pagination.');
-Route::post('persontypes', [PersonTypesController::class, 'store']);
-Route::put('persontypes/{id}', [PersonTypesController::class, 'update']);
-Route::get('persontypes/{id}', [PersonTypesController::class, 'show']);
-Route::delete('persontypes/{id}', [PersonTypesController::class, 'destroy']);
-//routes for accountplans
-Route::get('accountplans', [AccountPlanController::class, 'index']);
-Route::post('accountplans', [AccountPlanController::class, 'store']);
-Route::put('accountplans/{id}', [AccountPlanController::class, 'update']);
-Route::get('accountplans/{id}', [AccountPlanController::class, 'show']);
-Route::delete('accountplans/{id}', [AccountPlanController::class, 'destroy']);
-//routes for categories
-Route::get('categories', [CategoriesController::class, 'index']);
-Route::post('categories', [CategoriesController::class, 'store']);
-Route::put('categories/{id}', [CategoriesController::class, 'update']);
-Route::get('categories/{id}', [CategoriesController::class, 'show']);
-Route::delete('categories/{id}', [CategoriesController::class, 'destroy']);
-//routes for cities
-Route::get('cities', [CitiesController::class, 'index']);
-Route::post('cities', [CitiesController::class, 'store']);
-Route::put('cities/{id}', [CitiesController::class, 'update']);
-Route::get('cities/{id}', [CitiesController::class, 'show']);
-Route::get('cities_state/{id}', [CitiesController::class, 'cityByStateId']);
-Route::get('cities_country/{id}', [CitiesController::class, 'cityByCountryId']);
-Route::delete('cities/{id}', [CitiesController::class, 'destroy']);
-//routes for countries
-Route::get('countries', [CountriesController::class, 'index']);
-Route::post('countries', [CountriesController::class, 'store']);
-Route::put('countries/{id}', [CountriesController::class, 'update']);
-Route::get('countries/{id}', [CountriesController::class, 'show']);
-Route::delete('countries/{id}', [CountriesController::class, 'destroy']);
-//routes for ivatypes
-Route::get('ivatypes', [IvaTypeController::class, 'index']);
-Route::post('ivatypes', [IvaTypeController::class, 'store']);
-Route::put('ivatypes/{id}', [IvaTypeController::class, 'update']);
-Route::get('ivatypes/{id}', [IvaTypeController::class, 'show']);
-Route::delete('ivatypes/{id}', [IvaTypeController::class, 'destroy']);
-//routes for paymenttypes
-Route::get('paymenttypes', [PaymentTypesController::class, 'index']);
-Route::post('paymenttypes', [PaymentTypesController::class, 'store']);
-Route::put('paymenttypes/{id}', [PaymentTypesController::class, 'update']);
-Route::get('paymenttypes/{id}', [PaymentTypesController::class, 'show']);
-Route::delete('paymenttypes/{id}', [PaymentTypesController::class, 'destroy']);
-//routes for persons
-Route::get('persons', [PersonsController::class, 'index']);
-Route::post('persons', [PersonsController::class, 'store']);
-Route::put('persons/{id}', [PersonsController::class, 'update']);
-Route::get('persons/{id}', [PersonsController::class, 'show']);
-Route::get('personsbytype/{id}', [PersonsController::class, 'personByType']);
-Route::delete('persons/{id}', [PersonsController::class, 'destroy']);
-Route::get('persons-search-by-type/{id}', [PersonsController::class, 'searchPerType']);
-// routes for brands
-Route::get('brands', [BrandController::class, 'index']);
-Route::get('brands/{id}', [BrandController::class, 'show']);
-Route::post('brands', [BrandController::class, 'store']);
-Route::put('brands/{id}', [BrandController::class, 'update']);
-Route::delete('brands/{id}', [BrandController::class, 'destroy']);
-//routes for products
-Route::get('products', [ProductsController::class, 'index']);
-Route::post('products', [ProductsController::class, 'store']);
-Route::put('products/{id}', [ProductsController::class, 'update']);
-Route::get('products/{id}', [ProductsController::class, 'show']);
-Route::delete('products/{id}', [ProductsController::class, 'destroy']);
-//routes for states
-Route::get('states', [StatesController::class, 'index']);
-Route::post('states', [StatesController::class, 'store']);
-Route::put('states/{id}', [StatesController::class, 'update']);
-Route::get('states/{id}', [StatesController::class, 'show']);
-Route::get('states_country/{id}', [StatesController::class, 'getStatesByCountry']);
-Route::delete('states/{id}', [StatesController::class, 'destroy']);
-//routes for tills
-Route::get('tills', [TillsController::class, 'index']);
-Route::post('tills', [TillsController::class, 'store']);
-Route::put('tills/{id}', [TillsController::class, 'update']);
-Route::get('tills/{id}', [TillsController::class, 'show']);
-Route::get('tills/{id}/amount', [TillsController::class, 'showTillAmount']);
-Route::get('tills/{id}/byPerson',[TillsController::class, 'showTillsByUser']);
-Route::get('tills_tilltype/{id}', [TillsController::class, 'getByTypeId']);
-Route::post('tills/{id}/open', [TillsProcessController::class, 'cashOpening']);
-Route::post('tills/{id}/close', [TillsProcessController::class, 'close']);
-Route::get('tills/{id}/closeReportResume', [TillDetailsController::class, 'closeReportResume']);
-Route::get('tills/{id}/closeReportDetailed', [TillDetailsController::class, 'closeReportDetailed']);
-Route::post('tills/{id}/deposit', [TillsProcessController::class, 'deposit']);
-Route::post('tills/{id}/transfer', [TillsProcessController::class, 'transfer']);
-Route::delete('tills/{id}', [TillsController::class, 'destroy']);
-//routes for tilldetails
-Route::get('tilldetails', [TillDetailsController::class, 'index']);
-Route::post('tilldetails', [TillDetailsController::class, 'store']);
-Route::get('tilldetails/{till_id}/history', [TillDetailsController::class, 'showByTillIdAndDate']);
-Route::put('tilldetails/{id}', [TillDetailsController::class, 'update']);
-Route::get('tilldetails/{id}', [TillDetailsController::class, 'show']);
-Route::delete('tilldetails/{id}', [TillDetailsController::class, 'destroy']);
-//routes for tillsTransfers
-Route::get('tillstransfers', [TillsTransfersController::class, 'index']);
-Route::post('tillstransfers', [TillsTransfersController::class, 'store']);
-Route::put('tillstransfers/{id}', [TillsTransfersController::class, 'update']);
-Route::get('tillstransfers/{id}', [TillsTransfersController::class, 'show']);
-Route::get('tillstransfers/{id}/history', [TillsTransfersController::class, 'showByTillIdAndDate']);
-Route::delete('tillstransfers/{id}', [TillsTransfersController::class, 'destroy']);
-//routes for TillDetailProofPayments
-Route::get('tilldetailproofpayments', [TillDetailProofPaymentsController::class, 'index']);
-Route::post('tilldetailproofpayments', [TillDetailProofPaymentsController::class, 'store']);
-Route::put('tilldetailproofpayments/{id}', [TillDetailProofPaymentsController::class, 'update']);
-Route::get('tilldetailproofpayments/{id}', [TillDetailProofPaymentsController::class, 'show']);
-Route::delete('tilldetailproofpayments/{id}', [TillDetailProofPaymentsController::class, 'destroy']);
-//routes for ProofPaypments
-Route::get('proofpaypments', [ProofPaymentsController::class, 'index']);
-Route::post('proofpaypments', [ProofPaymentsController::class, 'store']);
-Route::post('proofpaypments_multiple', [ProofPaymentsController::class, 'storeMultiple']);
-Route::put('proofpaypments_multiple', [ProofPaymentsController::class, 'updateMultiple']);
-Route::put('proofpaypments/{id}', [ProofPaymentsController::class, 'update']);
-Route::get('proofpaypments/{id}', [ProofPaymentsController::class, 'show']);
-Route::get('proofpaypments_type/{id}', [ProofPaymentsController::class, 'showByType']);
-Route::delete('proofpaypments/{id}', [ProofPaymentsController::class, 'destroy']);
-//routes for sales
-Route::get('sales', [SalesController::class, 'index']);
-Route::post('sales', [SalesController::class, 'store']);
-Route::post('storesale', [SaleStoreController::class, 'store']);
-Route::delete('deletesale/{id}', [SaleDeleteController::class, 'destroy'])->whereNumber('id')->description('Delete a complete sale with stock and till reversal.');
-Route::put('sales/{id}', [SalesController::class, 'update']);
-Route::get('sales/{id}', [SalesController::class, 'show'])->whereNumber('id');
-Route::get('salesByNumber/{searchTerm}', [SalesController::class, 'searchByNumber']);
-Route::delete('sales/{id}', [SalesController::class, 'destroy']);
-// routes for sales reports
-Route::get('sales/report', [SalesReportController::class, 'getSalesReport']);
-Route::get('sales/report/pdf', [SalesReportController::class, 'getSalesReport']);
+    // ========================================
+    // PURCHASES API OPERATIONS
+    // ========================================
+    Route::prefix('purchases')->name('api.purchases.')->middleware('permission:purchases.index')->group(function () {
+        // Purchases listing with pagination and filters
+        Route::get('/', [PurchasesController::class, 'index'])->name('index');
+        
+        // Individual purchase details
+        Route::get('/{id}', [PurchasesController::class, 'show'])
+            ->middleware('permission:purchases.show')
+            ->name('show');
+            
+        // Purchase creation via API (for mobile or external systems)
+        Route::post('/', [PurchaseStoreController::class, 'store'])
+            ->middleware('permission:purchases.create')
+            ->name('store');
+            
+        // Purchase deletion with stock reversal
+        Route::delete('/{id}', [PurchaseDeleteController::class, 'destroy'])
+            ->middleware('permission:purchases.delete')
+            ->name('delete');
+            
+        // Purchase reports
+        Route::get('/reports/data', [PurchasesReportController::class, 'getPurchasesReport'])
+            ->middleware('permission:reports.show')
+            ->name('reports.data');
+    });
 
-//routes for salesdetails
-Route::get('salesdetails', [SalesDetailsController::class, 'index']);
-Route::post('salesdetails-many', [SalesDetailsController::class, 'storeMany']);
-Route::post('salesdetails', [SalesDetailsController::class, 'store']);
-Route::put('salesdetails/{id}', [SalesDetailsController::class, 'update']);
-Route::get('salesdetails/{id}', [SalesDetailsController::class, 'show']);
-Route::delete('salesdetails/{id}', [SalesDetailsController::class, 'destroy']);
-//routes for Purchases
-Route::get('purchases', [PurchasesController::class, 'index']);
-Route::post('purchases', [PurchasesController::class, 'store']);
-Route::put('purchases/{id}', [PurchasesController::class, 'update']);
-Route::get('purchases/{id}', [PurchasesController::class, 'show'])->whereNumber('id');
-Route::get('purchases/report', [PurchasesReportController::class, 'getPurchasesReport']);
-Route::get('purchases/report/pdf', [PurchasesReportController::class, 'getPurchasesReport']);
-Route::delete('purchases/{id}', [PurchasesController::class, 'destroy']);
-Route::delete('deletepurchases/{id}', [PurchaseDeleteController::class, 'destroy']);
-//routes for PurchasesDetails
-Route::get('purchasesdetails', [PurchasesDetailsController::class, 'index']);
-Route::post('purchasesdetails', [PurchasesDetailsController::class, 'store']);
-Route::post('purchasesdetails-many', [PurchasesDetailsController::class, 'storeMany']);
-Route::put('purchasesdetails/{id}', [PurchasesDetailsController::class, 'update']);
-Route::get('purchasesdetails/{id}', [PurchasesDetailsController::class, 'show']);
-Route::delete('purchasesdetails/{id}', [PurchasesDetailsController::class, 'destroy']);
-// routes for purchaseStore
-Route::post('storePurchase', [PurchaseStoreController::class, 'store']);
-// routes for Refunds
-Route::get('refunds', [RefundsController::class, 'index']);
-Route::post('refunds', [RefundsController::class, 'store']);
-Route::put('refunds/{id}', [RefundsController::class, 'update']);
-Route::get('refunds/{id}', [RefundsController::class, 'show']);
-Route::delete('refunds/{id}', [RefundsController::class, 'destroy']);
-// routes for RefundDetails
-Route::get('refunddetails', [RefundDetailsController::class, 'index']);
-Route::post('refunddetails', [RefundDetailsController::class, 'store']);
-Route::post('refunddetailsMany', [RefundDetailsController::class, 'storeMany']);
-Route::put('refunddetails/{id}', [RefundDetailsController::class, 'update']);
-Route::get('refunddetails/{id}', [RefundDetailsController::class, 'show']);
-Route::delete('refunddetails/{id}', [RefundDetailsController::class, 'destroy']);
-// routes for ContactTypes
-Route::get('contacttypes', [ContactTypesController::class, 'index']);
-Route::post('contacttypes', [ContactTypesController::class, 'store']);
-Route::put('contacttypes/{id}', [ContactTypesController::class, 'update']);
-Route::get('contacttypes/{id}', [ContactTypesController::class, 'show']);
-Route::delete('contacttypes/{id}', [ContactTypesController::class, 'destroy']);
+    // ========================================
+    // TILLS API OPERATIONS (Real-time operations)
+    // ========================================
+    Route::prefix('tills')->name('api.tills.')->group(function () {
+        // Till listing
+        Route::get('/', [TillsController::class, 'index'])
+            ->middleware('permission:tills.index')
+            ->name('index');
+            
+        // Till details
+        Route::get('/{id}', [TillsController::class, 'show'])
+            ->middleware('permission:tills.show')
+            ->name('show');
+            
+        // Till operations (these need to be API calls for real-time updates)
+        Route::post('/{id}/open', [TillsProcessController::class, 'cashOpening'])
+            ->middleware('permission:tills.update')
+            ->name('open');
+            
+        Route::post('/{id}/close', [TillsProcessController::class, 'close'])
+            ->middleware('permission:tills.update')
+            ->name('close');
+            
+        Route::post('/{id}/deposit', [TillsProcessController::class, 'deposit'])
+            ->middleware('permission:tills.update')
+            ->name('deposit');
+            
+        Route::post('/{id}/transfer', [TillsProcessController::class, 'transfer'])
+            ->middleware('permission:tills.update')
+            ->name('transfer');
+            
+        // Till reports
+        Route::get('/{id}/close-report-resume', [TillDetailsController::class, 'closeReportResume'])
+            ->middleware('permission:tills.show')
+            ->name('close-report-resume');
+            
+        Route::get('/{id}/close-report-detailed', [TillDetailsController::class, 'closeReportDetailed'])
+            ->middleware('permission:tills.show')
+            ->name('close-report-detailed');
+            
+        // Till history
+        Route::get('/{id}/history', [TillDetailsController::class, 'showByTillIdAndDate'])
+            ->middleware('permission:tills.show')
+            ->name('history');
+    });
 
-// routes for MeasurementUnits
-Route::get('measurement-units', [MeasurementUnitsController::class, 'index'])->description('Get list of measurement units with pagination.');
-Route::get('measurement-units/active', [MeasurementUnitsController::class, 'active'])->description('Get list of active measurement units.');
-Route::post('measurement-units', [MeasurementUnitsController::class, 'store'])->description('Store a new measurement unit.');
-Route::get('measurement-units/{id}', [MeasurementUnitsController::class, 'show'])->description('Show a measurement unit.');
-Route::put('measurement-units/{id}', [MeasurementUnitsController::class, 'update'])->description('Update a measurement unit.');
-Route::delete('measurement-units/{id}', [MeasurementUnitsController::class, 'destroy'])->description('Delete a measurement unit.');
-Route::patch('measurement-units/{id}/activate', [MeasurementUnitsController::class, 'activate'])->description('Activate a measurement unit.');
-Route::patch('measurement-units/{id}/deactivate', [MeasurementUnitsController::class, 'deactivate'])->description('Deactivate a measurement unit.');
+    // ========================================
+    // ROLES AND PERMISSIONS API (For admin interfaces)
+    // ========================================
+    Route::prefix('roles')->name('api.roles.')->middleware('permission:roles.index')->group(function () {
+        Route::get('/', [RolesController::class, 'index'])->name('index');
+        Route::get('/{id}', [RolesController::class, 'show'])
+            ->middleware('permission:roles.show')
+            ->name('show');
+            
+        Route::post('/', [RolesController::class, 'store'])
+            ->middleware('permission:roles.create')
+            ->name('store');
+            
+        Route::put('/{id}', [RolesController::class, 'update'])
+            ->middleware('permission:roles.update')
+            ->name('update');
+            
+        Route::delete('/{id}', [RolesController::class, 'destroy'])
+            ->middleware('permission:roles.delete')
+            ->name('delete');
+            
+        // Role permissions management
+        Route::post('/{roleId}/permissions', [RolesController::class, 'assignPermissionsToRole'])
+            ->middleware('permission:roles.update')
+            ->name('assign-permissions');
+            
+        Route::delete('/{roleId}/permissions', [RolesController::class, 'removePermissionsFromRole'])
+            ->middleware('permission:roles.update')
+            ->name('remove-permissions');
+    });
 
+    Route::prefix('permissions')->name('api.permissions.')->middleware('permission:permissions.index')->group(function () {
+        Route::get('/', [PermissionsController::class, 'index'])->name('index');
+        Route::get('/{id}', [PermissionsController::class, 'show'])
+            ->middleware('permission:permissions.show')
+            ->name('show');
+    });
 
+    // ========================================
+    // USERS API (For admin interfaces)
+    // ========================================
+    Route::prefix('users')->name('api.users.')->middleware('permission:users.index')->group(function () {
+        Route::get('/', [UsersController::class, 'index'])->name('index');
+        Route::get('/{id}', [UsersController::class, 'show'])
+            ->middleware('permission:users.show')
+            ->name('show');
+            
+        // User role management
+        Route::get('/{id}/roles', [UsersController::class, 'showPermissionsByRole'])
+            ->middleware('permission:users.show')
+            ->name('roles');
+            
+        Route::post('/{id}/assign-role', [UsersController::class, 'assignRole'])
+            ->middleware('permission:users.update')
+            ->name('assign-role');
+    });
+
+    // ========================================
+    // PERSONS API (For dynamic operations)
+    // ========================================
+    Route::prefix('persons')->name('api.persons.')->middleware('permission:persons.index')->group(function () {
+        Route::get('/', [PersonsController::class, 'index'])->name('index');
+        Route::get('/{id}', [PersonsController::class, 'show'])
+            ->middleware('permission:persons.show')
+            ->name('show');
+            
+        Route::get('/by-type/{id}', [PersonsController::class, 'personByType'])
+            ->name('by-type');
+    });
+
+    // ========================================
+    // PRODUCTS API (For dynamic operations)
+    // ========================================
+    Route::prefix('products')->name('api.products.')->middleware('permission:products.index')->group(function () {
+        Route::get('/', [ProductsController::class, 'index'])->name('index');
+        Route::get('/{id}', [ProductsController::class, 'show'])
+            ->middleware('permission:products.show')
+            ->name('show');
+    });
+
+    // ========================================
+    // REFERENCE DATA APIs (For dynamic loading when needed)
+    // ========================================
+    
+    // These endpoints are kept for cases where dynamic loading is absolutely necessary
+    // Most reference data should be pre-loaded via Web controllers
+    
+    Route::prefix('reference')->name('api.reference.')->group(function () {
+        // Payment types with proof payments
+        Route::get('/payment-types', [PaymentTypesController::class, 'index'])->name('payment-types');
+        Route::get('/payment-types/{id}/proof-payments', [ProofPaymentsController::class, 'showByType'])->name('proof-payments-by-type');
+        
+        // Active measurement units
+        Route::get('/measurement-units/active', [MeasurementUnitsController::class, 'active'])->name('measurement-units-active');
+        
+        // Categories
+        Route::get('/categories', [CategoriesController::class, 'index'])->name('categories');
+        
+        // Brands
+        Route::get('/brands', [BrandController::class, 'index'])->name('brands');
+        
+        // IVA types
+        Route::get('/iva-types', [IvaTypeController::class, 'index'])->name('iva-types');
+    });
+
+    // ========================================
+    // REFUNDS API (For complex operations)
+    // ========================================
+    Route::prefix('refunds')->name('api.refunds.')->middleware('permission:refunds.index')->group(function () {
+        Route::get('/', [RefundsController::class, 'index'])->name('index');
+        Route::get('/{id}', [RefundsController::class, 'show'])
+            ->middleware('permission:refunds.show')
+            ->name('show');
+            
+        Route::post('/', [RefundsController::class, 'store'])
+            ->middleware('permission:refunds.create')
+            ->name('store');
+            
+        Route::delete('/{id}', [RefundsController::class, 'destroy'])
+            ->middleware('permission:refunds.delete')
+            ->name('delete');
+    });
+
+    // ========================================
+    // PROOF PAYMENTS API (For complex payment operations)
+    // ========================================
+    Route::prefix('proof-payments')->name('api.proof-payments.')->group(function () {
+        Route::get('/', [ProofPaymentsController::class, 'index'])->name('index');
+        Route::get('/{id}', [ProofPaymentsController::class, 'show'])->name('show');
+        
+        // Multiple proof payments operations
+        Route::post('/multiple', [ProofPaymentsController::class, 'storeMultiple'])->name('store-multiple');
+        Route::put('/multiple', [ProofPaymentsController::class, 'updateMultiple'])->name('update-multiple');
+    });
+
+    // ========================================
+    // SALES AND PURCHASE DETAILS API (For complex operations)
+    // ========================================
+    Route::prefix('sales-details')->name('api.sales-details.')->group(function () {
+        Route::post('/multiple', [SalesDetailsController::class, 'storeMany'])->name('store-multiple');
+    });
+
+    Route::prefix('purchase-details')->name('api.purchase-details.')->group(function () {
+        Route::post('/multiple', [PurchasesDetailsController::class, 'storeMany'])->name('store-multiple');
+    });
+
+    Route::prefix('refund-details')->name('api.refund-details.')->group(function () {
+        Route::post('/multiple', [RefundDetailsController::class, 'storeMany'])->name('store-multiple');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| REMOVED ENDPOINTS
+|--------------------------------------------------------------------------
+|
+| The following endpoints have been removed as they are now handled
+| via secure Web controllers with Inertia.js pre-loading:
+|
+| - Individual CRUD operations for reference data (categories, brands, etc.)
+| - Form data endpoints that can be pre-loaded
+| - Simple listing endpoints without complex filtering
+| - Endpoints that duplicate Web controller functionality
+|
+| These operations should now use the Web routes defined in routes/web.php
+| with proper Inertia.js data pre-loading for better security and performance.
+|
+*/

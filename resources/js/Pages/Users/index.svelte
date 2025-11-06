@@ -1,246 +1,125 @@
-
 <script>
-	// @ts-nocheck
-	import { onMount } from 'svelte';
-	import { inertia } from '@inertiajs/inertia-svelte';
-	import axios from 'axios';
-	import {Pagination, DeleteModal, Modal} from '@components/utilities/';
-	import {Alert, ErrorAlert} from '@components/Alerts/';
-	import {SearchIcon, SortIcon} from '@components/Icons/';
-	import Form from './form.svelte';
-	export let user
-    export let appUrl
-	export let data;
-	let users = [];
-	let error = null;
-	let openAlert = false;
-	let _new = false;
-	let edit = false;
-	let item = null;
-	let search_param = '';
-	let openDeleteModal = false;
-	let alertMessage = '';
-	let alertType = '';
-	let id = 0;
-	let orderBy = 'name';
-	let order = 'asc';
-	let total_pages;
-	let total_items;
-	let current_page = 1;
-	let items_per_page = '10';
-	let url = `/users?`;
+    export let data = [];
 
-	function updateData() {
-		fetchData(current_page, items_per_page,orderBy,order);
-		closeModal();
-	}
+    import Layout from "../../components/Commons/Layout.svelte";
+    import { Inertia } from "@inertiajs/inertia";
 
-	async function assignData(data) {
-		users = data.data;
-		current_page = data.currentPage;
-		total_items = data.per_page;
-		total_pages = data.last_page;
-	}
+    function viewUser(id) {
+        Inertia.visit(`/users/${id}`);
+    }
 
-	function fetchData(page = current_page, rows = items_per_page,sort_by = orderBy,order = order) {
-		axios.get(`${url}sort_by=${sort_by}&order=${order}&page=${page}&per_page=${rows}`).then((response) => {
-			assignData(response.data);
-		}).catch((err) => {
-			error = err.request.response;
-		});
-	}
+    function editUser(id) {
+        Inertia.visit(`/users/${id}/edit`);
+    }
 
-	function closeAlert() {
-		openAlert = false;
-	}
-
-	function OpenAlertMessage(event) {
-		openAlert = true;
-		alertType = event.detail.type;
-		alertMessage = event.detail.message;
-	}
-
-	function ClearError(){
-		error = null;
-	}
-
-	function deleteRecord() {
-		let token = '';
-		let config = {
-			headers: {
-				authorization: `token: ${token}`,
-			},
-		}
-		axios.delete(`/users/${id}`, config).then((res) => {
-			let detail = {
-				detail: {
-					type: 'delete',
-					message: res.data.message
-				}
-			};
-			OpenAlertMessage(detail);
-			closeDeleteModal();
-		});
-	}
-	function openEditModal(data) {
-		edit = true;
-		item = data;
-		_new = false;
-	}
-	function closeModal() {
-		edit = false;
-		_new = false;
-	}
-	function openNewModal() {
-		edit = false;
-		item = null;
-		_new = true;
-	}
-	function closeDeleteModal() {
-		openDeleteModal = false;
-		fetchData(current_page, items_per_page,orderBy,order);
-	}
-	function sortData(param) {
-		orderBy = param;
-		if (order == 'asc') {
-			order = 'desc';
-		} else {
-			order = 'asc';
-		}
-		fetchData(current_page, items_per_page,orderBy,order);
-	}
-	function OpenDeleteModal(data) {
-		id = data;
-		openDeleteModal = true;
-	}
-	function handleRowsPerPage(event) {
-		items_per_page = event.detail.value;
-		fetchData(current_page, event.detail.value,orderBy,order);
-	}
-	function handlePage(event) {
-		current_page = event.detail.value;
-		fetchData(event.detail.value, items_per_page,orderBy,order);
-	}
-	function search(event) {
-		search_param = event.target.value;
-		if (search_param == '') {
-			url = `/users?`;
-		} else {
-			url = `/users?name=${search_param}&email=${search_param}&`;
-		}
-		fetchData(1, items_per_page,orderBy,order);
-	}
-	onMount(async () => {
-		assignData(data);
-	});
+    function deleteUser(id) {
+        if (confirm("¿Está seguro de que desea eliminar este usuario?")) {
+            Inertia.delete(`/users/${id}`);
+        }
+    }
 </script>
-<svelte:head>
-    <title>Usuarios</title>
-</svelte:head>
-{#if error}
-	<ErrorAlert message={error} on:clearError={ClearError} />
-{/if}
-<h3 class="mb-4 text-center text-2xl">Usuarios</h3>
-<div class="flex justify-center">
-	<label class="input input-bordered flex items-center gap-2">
-		<input type="text" class="grow" placeholder="Search" on:change={search} />
-		<SearchIcon />
-	</label>
-</div>
-{#if openAlert}
-	<Alert {alertMessage} {alertType} on:close={closeAlert} />
-{/if}
-{#if openDeleteModal}
-	<dialog class="modal modal-open">
-		<DeleteModal on:close={closeDeleteModal} on:confirm={deleteRecord} />
-	</dialog>
-{/if}
-{#if _new == true}
-	<Modal on:close={() => updateData()}>
-		<Form {edit} on:message={OpenAlertMessage} on:close={() => updateData()} />
-	</Modal>
-{/if}
-{#if edit == true}
-	<Modal on:close={() => updateData()}>
-		<Form {edit} {item} on:message={OpenAlertMessage} on:close={() => updateData()} />
-	</Modal>
-{/if}
-{#if data}
-	<div class="overflow-x-auto">
-		<table class="table w-full">
-			<thead>
-				<tr>
-					<th class="text-center text-lg">
-						
-						<div class="flex items-center">
-							id
-							<button on:click={() => sortData('id')}
-								><SortIcon/></button
-							>
-						</div>
-					</th>
-					<th class="text-center text-lg">
-						<div class="flex items-center justify-center">
-							Descripcion
-							<button on:click={() => sortData('name')}
-								><SortIcon/></button
-							>
-						</div>
-					</th>
-					<th class="text-center text-lg">
-						<div class="flex items-center justify-center">
-							Codigo
-							<button on:click={() => sortData('email')}
-								><SortIcon/></button
-							>
-						</div>
-					</th>
-					{#if user.permissions != undefined && user.permissions.includes('users.create')}
-						<th>
-							<button class="btn btn-primary" on:click={() => (_new = true)}>
-								Agregar
-							</button>
-						</th>
-					{/if}
-				</tr>
-			</thead>
-			<tbody>
-				{#each users as us, i (us.id)}
-					<tr class="hover">
-						<td>{us.id}</td>
-						<td class="text-center">{us.name}</td>
-						<td class="text-center">{us.email}</td>
-						{#if user.permissions != undefined && user.permissions.includes('users.show')}
-							<td>
-								<button class="btn btn-info" use:inertia={{ href: `/users/${us.id}` }}>
-									Mostrar
-								</button>
-							</td>
-						{/if}
-						{#if user.permissions != undefined && user.permissions.includes('users.update')}
-							<td>
-								<button class="btn btn-warning" on:click={() => openEditModal(us)}>
-									Editar
-								</button>
-							</td>
-						{/if}
-						{#if user.permissions != undefined && user.permissions.includes('users.destroy')}
-							<td>
-								<button class="btn btn-secondary" on:click={() => OpenDeleteModal(us.id)}>
-									Eliminar
-								</button>
-							</td>	
-						{/if}
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-		<Pagination
-			current_page={current_page?current_page:1}
-			{total_pages}
-			{items_per_page}
-			on:page={handlePage}
-			on:row={handleRowsPerPage}
-		/>
-	</div>
-{/if}
+
+<Layout>
+    <div class="container mx-auto px-4 py-6">
+        <div class="bg-white shadow-md rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h1 class="text-2xl font-bold text-gray-900">Usuarios</h1>
+            </div>
+
+            <div class="p-6">
+                <div class="mb-4">
+                    <button
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                        on:click={() => Inertia.visit("/users/create")}
+                    >
+                        Nuevo Usuario
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >ID</th
+                                >
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >Nombre</th
+                                >
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >Email</th
+                                >
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >Fecha de Creación</th
+                                >
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                    >Acciones</th
+                                >
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {#each data as user}
+                                <tr>
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                        >{user.id}</td
+                                    >
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                        >{user.name}</td
+                                    >
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                        >{user.email}</td
+                                    >
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                    >
+                                        {new Date(
+                                            user.created_at,
+                                        ).toLocaleDateString()}
+                                    </td>
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap text-sm font-medium"
+                                    >
+                                        <button
+                                            class="text-blue-600 hover:text-blue-900 mr-3"
+                                            on:click={() => viewUser(user.id)}
+                                        >
+                                            Ver
+                                        </button>
+                                        <button
+                                            class="text-green-600 hover:text-green-900 mr-3"
+                                            on:click={() => editUser(user.id)}
+                                        >
+                                            Editar
+                                        </button>
+                                        <button
+                                            class="text-red-600 hover:text-red-900"
+                                            on:click={() => deleteUser(user.id)}
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            {/each}
+                        </tbody>
+                    </table>
+
+                    {#if data.length === 0}
+                        <div class="text-center py-8">
+                            <p class="text-gray-500">
+                                No hay usuarios registrados.
+                            </p>
+                        </div>
+                    {/if}
+                </div>
+            </div>
+        </div>
+    </div>
+</Layout>
