@@ -15,19 +15,18 @@ class CitiesController extends ApiController
      */
     public function index()
     {
-        try{
+        try {
             $t = Cities::query()->first();
             $query = Cities::query();
             $query = $this->filterData($query, $t)
-            ->join('states','states.id','=','cities.state_id')
-            ->join('countries','states.country_id','=','countries.id')
-            ->select('cities.*','states.state_name', 'countries.country_name');
+                ->join('states', 'states.id', '=', 'cities.state_id')
+                ->join('countries', 'states.country_id', '=', 'countries.id')
+                ->select('cities.*', 'states.state_name', 'countries.country_name');
             $datos = $query->get();
             $from = request()->wantsJson() ? 'api' : 'web';
-            return $this->showAll($datos,$from,'Cities/index', 200);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'mesage'=>'No se pudo obtener los datos']);
+            return $this->showAll($datos, $from, 'Cities/index', 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'mesage' => 'No se pudo obtener los datos']);
         }
     }
 
@@ -47,25 +46,23 @@ class CitiesController extends ApiController
      */
     public function store(Request $request)
     {
-        try{
-            $rules=[
+        try {
+            $rules = [
                 'city_name' => 'required|string|max:255',
                 'city_code' => 'required|string|max:255',
                 'state_id' => 'required|int',
             ];
-            $request->validate($rules);
-            $cities = Cities::create($request->validated());
-            return $this->showAfterAction($cities,'create',201);
-        }
-        catch(\Illuminate\Validation\ValidationException $e){
+            $validated = $request->validate($rules);
+            $cities = Cities::create($validated);
+            return $this->showAfterAction($cities, 'create', 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'error'=>$e->getMessage(),
-                'message'=>'Los datos no son correctos',
-                'details' => method_exists($e, 'errors') ? $e->errors() : null 
-            ],422);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=> $e->getMessage(),'message'=>'No se pudo crear registro'],400);
+                'error' => $e->getMessage(),
+                'message' => 'Los datos no son correctos',
+                'details' => method_exists($e, 'errors') ? $e->errors() : null
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo crear registro'], 400);
         }
     }
 
@@ -77,20 +74,19 @@ class CitiesController extends ApiController
      */
     public function show($id)
     {
-        try{
+        try {
             $cities = Cities::where('cities.id', $id)
-            ->join('states','states.id','=','cities.state_id')
-            ->join('countries','states.country_id','=','countries.id')
-            ->select('cities.*','states.state_name', 'countries.country_name')
-            ->first();
+                ->join('states', 'states.id', '=', 'cities.state_id')
+                ->join('countries', 'states.country_id', '=', 'countries.id')
+                ->select('cities.*', 'states.state_name', 'countries.country_name')
+                ->first();
             $audits = $cities->audits;
-            if(request()->wantsJson()){
+            if (request()->wantsJson()) {
                 return $this->showOne($cities, $audits, 200);
             }
-            return Inertia::render('Cities/show', ['city' => $cities, 'audits'=>$audits]);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'mesage'=>'No se pudo obtener los datos']);
+            return Inertia::render('Cities/show', ['city' => $cities, 'audits' => $audits]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'mesage' => 'No se pudo obtener los datos']);
         }
     }
 
@@ -103,55 +99,53 @@ class CitiesController extends ApiController
      */
     public function update(Request $request, $id)
     {
-        try{
-            $rules=[
+        try {
+            $rules = [
                 'city_name' => 'required|string|max:255',
                 'city_code' => 'required|string|max:255',
                 'state_id' => 'required|int',
             ];
-            $request->validate($rules);
+            $validated = $request->validate($rules);
             $cities = Cities::findOrFail($id);
-            $cities->update($request->validated());
+            $cities->update($validated);
             $cities->save();
-            return $this->showAfterAction($cities,'update',200);
-        }
-        catch(\Illuminate\Validation\ValidationException $e){
+            return $this->showAfterAction($cities, 'update', 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'error'=>$e->getMessage(),
-                'message'=>'Los datos no son correctos',
-                'details' => method_exists($e, 'errors') ? $e->errors() : null 
-            ],422);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=> $e->getMessage(),'message'=>'No se pudo actualizar los datos'],400);
+                'error' => $e->getMessage(),
+                'message' => 'Los datos no son correctos',
+                'details' => method_exists($e, 'errors') ? $e->errors() : null
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo actualizar los datos'], 400);
         }
     }
 
-    
-    public function cityByStateId($id){
-        try{
+
+    public function cityByStateId($id)
+    {
+        try {
             $cities = Cities::where('state_id', $id)
-            ->join('states','states.id','=','cities.state_id')
-            ->join('countries','states.country_id','=','countries.id')
-            ->get();
+                ->join('states', 'states.id', '=', 'cities.state_id')
+                ->join('countries', 'states.country_id', '=', 'countries.id')
+                ->get();
             return $this->showAll($cities, 200);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'mesage'=>'No se pudo obtener los datos']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'mesage' => 'No se pudo obtener los datos']);
         }
     }
 
-    
-    public function cityByCountryId($id){
-        try{
-            $cities = Cities::join('states','states.id','=','cities.state_id')
-            ->join('countries','states.country_id','=','countries.id')
-            ->where('states.country_id', $id)
-            ->get();
+
+    public function cityByCountryId($id)
+    {
+        try {
+            $cities = Cities::join('states', 'states.id', '=', 'cities.state_id')
+                ->join('countries', 'states.country_id', '=', 'countries.id')
+                ->where('states.country_id', $id)
+                ->get();
             return $this->showAll($cities, 200);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'mesage'=>'No se pudo obtener los datos']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'mesage' => 'No se pudo obtener los datos']);
         }
     }
 
@@ -163,13 +157,12 @@ class CitiesController extends ApiController
      */
     public function destroy($id)
     {
-        try{
+        try {
             $cities = Cities::find($id);
             $cities->delete();
-            return response()->json(['message'=>'Eliminado con exito']);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'mesage'=>'No se pudo eliminar los datos']);
+            return response()->json(['message' => 'Eliminado con exito']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'mesage' => 'No se pudo eliminar los datos']);
         }
     }
 }

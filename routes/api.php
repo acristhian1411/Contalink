@@ -74,8 +74,8 @@ Route::middleware(['throttle:5,1'])->group(function () {
 // ========================================
 // PROTECTED API ROUTES (Standard Rate Limiting: 60 requests per minute)
 // ========================================
-Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
-    
+Route::middleware(['auth', 'throttle:60,1'])->group(function () {
+
     // ========================================
     // USER CONTEXT AND AUTHENTICATION
     // ========================================
@@ -90,14 +90,16 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/clients', [PersonsController::class, 'search'])
             ->middleware('permission:persons.index')
             ->name('clients');
-            
+
         Route::get('/products', [ProductsController::class, 'search'])
             ->middleware('permission:products.index')
             ->name('products');
-            
+
         Route::get('/persons-by-type/{type}', [PersonsController::class, 'searchPerType'])
             ->middleware('permission:persons.index')
             ->name('persons-by-type');
+
+        Route::get('countries', [CountriesController::class, 'index'])->middleware('permission:countries.index')->name('countries');
     });
 
     // ========================================
@@ -108,20 +110,20 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/tills/{id}/amount', [TillsController::class, 'showTillAmount'])
             ->middleware('permission:tills.show')
             ->name('till-amount');
-            
+
         // Tills by user for form pre-population
         Route::get('/tills/by-person/{id}', [TillsController::class, 'showTillsByUser'])
             ->middleware('permission:tills.index')
             ->name('tills-by-person');
-            
+
         // Cities by state for geographic forms
         Route::get('/cities/by-state/{id}', [CitiesController::class, 'cityByStateId'])
             ->name('cities-by-state');
-            
+
         // Cities by country
         Route::get('/cities/by-country/{id}', [CitiesController::class, 'cityByCountryId'])
             ->name('cities-by-country');
-            
+
         // States by country
         Route::get('/states/by-country/{id}', [StatesController::class, 'getStatesByCountry'])
             ->name('states-by-country');
@@ -133,31 +135,31 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::prefix('sales')->name('api.sales.')->middleware('permission:sales.index')->group(function () {
         // Sales listing with pagination and filters
         Route::get('/', [SalesController::class, 'index'])->name('index');
-        
+
         // Sales search by number
         Route::get('/search/{searchTerm}', [SalesController::class, 'searchByNumber'])
             ->name('search');
-            
+
         // Individual sale details
         Route::get('/{id}', [SalesController::class, 'show'])
             ->middleware('permission:sales.show')
             ->name('show');
-            
+
         // Sales validation (for complex business rules)
         Route::post('/validate', [SalesController::class, 'validateSale'])
             ->middleware('permission:sales.create')
             ->name('validate');
-            
+
         // Sales creation via API (for mobile or external systems)
         Route::post('/', [SaleStoreController::class, 'store'])
             ->middleware('permission:sales.create')
             ->name('store');
-            
+
         // Sales deletion with stock reversal
         Route::delete('/{id}', [SaleDeleteController::class, 'destroy'])
             ->middleware('permission:sales.delete')
             ->name('delete');
-            
+
         // Sales reports
         Route::get('/reports/data', [SalesReportController::class, 'getSalesReport'])
             ->middleware('permission:reports.show')
@@ -170,22 +172,22 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::prefix('purchases')->name('api.purchases.')->middleware('permission:purchases.index')->group(function () {
         // Purchases listing with pagination and filters
         Route::get('/', [PurchasesController::class, 'index'])->name('index');
-        
+
         // Individual purchase details
         Route::get('/{id}', [PurchasesController::class, 'show'])
             ->middleware('permission:purchases.show')
             ->name('show');
-            
+
         // Purchase creation via API (for mobile or external systems)
         Route::post('/', [PurchaseStoreController::class, 'store'])
             ->middleware('permission:purchases.create')
             ->name('store');
-            
+
         // Purchase deletion with stock reversal
         Route::delete('/{id}', [PurchaseDeleteController::class, 'destroy'])
             ->middleware('permission:purchases.delete')
             ->name('delete');
-            
+
         // Purchase reports
         Route::get('/reports/data', [PurchasesReportController::class, 'getPurchasesReport'])
             ->middleware('permission:reports.show')
@@ -200,38 +202,38 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/', [TillsController::class, 'index'])
             ->middleware('permission:tills.index')
             ->name('index');
-            
+
         // Till details
         Route::get('/{id}', [TillsController::class, 'show'])
             ->middleware('permission:tills.show')
             ->name('show');
-            
+
         // Till operations (these need to be API calls for real-time updates)
         Route::post('/{id}/open', [TillsProcessController::class, 'cashOpening'])
             ->middleware('permission:tills.update')
             ->name('open');
-            
+
         Route::post('/{id}/close', [TillsProcessController::class, 'close'])
             ->middleware('permission:tills.update')
             ->name('close');
-            
+
         Route::post('/{id}/deposit', [TillsProcessController::class, 'deposit'])
             ->middleware('permission:tills.update')
             ->name('deposit');
-            
+
         Route::post('/{id}/transfer', [TillsProcessController::class, 'transfer'])
             ->middleware('permission:tills.update')
             ->name('transfer');
-            
+
         // Till reports
         Route::get('/{id}/close-report-resume', [TillDetailsController::class, 'closeReportResume'])
             ->middleware('permission:tills.show')
             ->name('close-report-resume');
-            
+
         Route::get('/{id}/close-report-detailed', [TillDetailsController::class, 'closeReportDetailed'])
             ->middleware('permission:tills.show')
             ->name('close-report-detailed');
-            
+
         // Till history
         Route::get('/{id}/history', [TillDetailsController::class, 'showByTillIdAndDate'])
             ->middleware('permission:tills.show')
@@ -246,24 +248,24 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/{id}', [RolesController::class, 'show'])
             ->middleware('permission:roles.show')
             ->name('show');
-            
+
         Route::post('/', [RolesController::class, 'store'])
             ->middleware('permission:roles.create')
             ->name('store');
-            
+
         Route::put('/{id}', [RolesController::class, 'update'])
             ->middleware('permission:roles.update')
             ->name('update');
-            
+
         Route::delete('/{id}', [RolesController::class, 'destroy'])
             ->middleware('permission:roles.delete')
             ->name('delete');
-            
+
         // Role permissions management
         Route::post('/{roleId}/permissions', [RolesController::class, 'assignPermissionsToRole'])
             ->middleware('permission:roles.update')
             ->name('assign-permissions');
-            
+
         Route::delete('/{roleId}/permissions', [RolesController::class, 'removePermissionsFromRole'])
             ->middleware('permission:roles.update')
             ->name('remove-permissions');
@@ -271,7 +273,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     Route::prefix('permissions')->name('api.permissions.')->middleware('permission:permissions.index')->group(function () {
         Route::get('/', [PermissionsController::class, 'index'])->name('index');
-        Route::get('/not-in-role/{roleId}', [PermissionsController::class,'showPermissionsNotContainRole'])->name('not-in-role');
+        Route::get('/not-in-role/{roleId}', [PermissionsController::class, 'showPermissionsNotContainRole'])->name('not-in-role');
         Route::get('/{id}', [PermissionsController::class, 'show'])
             ->middleware('permission:permissions.show')
             ->name('show');
@@ -285,12 +287,12 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/{id}', [UsersController::class, 'show'])
             ->middleware('permission:users.show')
             ->name('show');
-            
+
         // User role management
         Route::get('/{id}/roles', [UsersController::class, 'showPermissionsByRole'])
             ->middleware('permission:users.show')
             ->name('roles');
-            
+
         Route::post('/{id}/assign-role', [UsersController::class, 'assignRole'])
             ->middleware('permission:users.update')
             ->name('assign-role');
@@ -304,7 +306,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/{id}', [PersonsController::class, 'show'])
             ->middleware('permission:persons.show')
             ->name('show');
-            
+
         Route::get('/by-type/{id}', [PersonsController::class, 'personByType'])
             ->name('by-type');
     });
@@ -322,24 +324,24 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // ========================================
     // REFERENCE DATA APIs (For dynamic loading when needed)
     // ========================================
-    
+
     // These endpoints are kept for cases where dynamic loading is absolutely necessary
     // Most reference data should be pre-loaded via Web controllers
-    
+
     Route::prefix('reference')->name('api.reference.')->group(function () {
         // Payment types with proof payments
         Route::get('/payment-types', [PaymentTypesController::class, 'index'])->name('payment-types');
         Route::get('/payment-types/{id}/proof-payments', [ProofPaymentsController::class, 'showByType'])->name('proof-payments-by-type');
-        
+
         // Active measurement units
         Route::get('/measurement-units/active', [MeasurementUnitsController::class, 'active'])->name('measurement-units-active');
-        
+
         // Categories
         Route::get('/categories', [CategoriesController::class, 'index'])->name('categories');
-        
+
         // Brands
         Route::get('/brands', [BrandController::class, 'index'])->name('brands');
-        
+
         // IVA types
         Route::get('/iva-types', [IvaTypeController::class, 'index'])->name('iva-types');
     });
@@ -352,11 +354,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/{id}', [RefundsController::class, 'show'])
             ->middleware('permission:refunds.show')
             ->name('show');
-            
+
         Route::post('/', [RefundsController::class, 'store'])
             ->middleware('permission:refunds.create')
             ->name('store');
-            
+
         Route::delete('/{id}', [RefundsController::class, 'destroy'])
             ->middleware('permission:refunds.delete')
             ->name('delete');
@@ -368,7 +370,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::prefix('proof-payments')->name('api.proof-payments.')->group(function () {
         Route::get('/', [ProofPaymentsController::class, 'index'])->name('index');
         Route::get('/{id}', [ProofPaymentsController::class, 'show'])->name('show');
-        
+
         // Multiple proof payments operations
         Route::post('/multiple', [ProofPaymentsController::class, 'storeMultiple'])->name('store-multiple');
         Route::put('/multiple', [ProofPaymentsController::class, 'updateMultiple'])->name('update-multiple');

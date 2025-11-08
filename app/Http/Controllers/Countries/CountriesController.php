@@ -20,17 +20,49 @@ class CountriesController extends ApiController
      */
     public function index()
     {
-        try{
+        try {
             $t = Countries::query()->first();
             $query = Countries::query();
             $query = $this->filterData($query, $t);
             $datos = $query
-            ->get();
-            $from = request()->wantsJson() ? 'api' : 'web';
+                ->get();
+            $from = request()->wantsJson() or request()->has('name') ? 'api' : 'web';
             // dd($from);
             return $this->showAll($datos, $from, 'Countries/index', 200);
-        }catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'mesage'=>'No se pudo obtener los datos']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'mesage' => 'No se pudo obtener los datos']);
+        }
+    }
+
+    /**
+     * @brief Search for countries by name or code with filtering capabilities
+     * @param Request $req The HTTP request containing search parameters
+     * @return \Illuminate\Http\JsonResponse|\Inertia\Response
+     */
+    public function search(Request $req)
+    {
+        try {
+            $t = Countries::query()->first();
+            $query = Countries::query();
+            $query = $this->filterData($query, $t);
+            if (empty($searchTerm)) {
+                $datos = $query
+                    ->get();
+                $from = 'api';
+                // dd($from);
+                return $this->showAll($datos, $from, 'Countries/index', 200);
+            }
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('country_name', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('country_code', 'LIKE', "%{$searchTerm}%");
+            });
+            $datos = $query
+                ->get();
+            $from = 'api';
+            // dd($from);
+            return $this->showAll($datos, $from, 'Countries/index', 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'mesage' => 'No se pudo obtener los datos']);
         }
     }
 
@@ -46,25 +78,24 @@ class CountriesController extends ApiController
      * @throws \Illuminate\Validation\ValidationException When validation rules fail for required fields
      * @throws \Exception When database creation fails or other unexpected errors occur
      */
-   public function store(Request $request)
+    public function store(Request $request)
     {
-        try{
+        try {
             $reglas = [
                 'country_name' => 'required|string|max:255',
                 'country_code' => 'required|string|max:255',
             ];
-            $validated = $request->validate( $reglas);
+            $validated = $request->validate($reglas);
             $dato = Countries::create($validated);
-            return response()->json(['message'=>'Registro creado con exito','data'=>$dato],201);
-        }catch(\Illuminate\Validation\ValidationException $e){
+            return response()->json(['message' => 'Registro creado con exito', 'data' => $dato], 201);
+        } catch (ValidationException $e) {
             return response()->json([
-                'error'=>$e,
-                'message'=>'Los datos no son correctos',
-                'details' => method_exists($e, 'errors') ? $e->errors() : null 
-            ],422);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=> $e->getMessage(),'message'=>'No se pudo crear registro'],400);
+                'error' => $e,
+                'message' => 'Los datos no son correctos',
+                'details' => method_exists($e, 'errors') ? $e->errors() : null
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo crear registro'], 400);
         }
     }
 
@@ -81,18 +112,17 @@ class CountriesController extends ApiController
      */
     public function show($id)
     {
-        try{
+        try {
             $dato = Countries::findOrFail($id);
             $audits = $dato->audits;
-            if(request()->wantsJson()){
-                return $this->showOne($dato,$audits,200);
+            if (request()->wantsJson()) {
+                return $this->showOne($dato, $audits, 200);
             }
-            return Inertia::render('Countries/show', ['country' => $dato,'audits'=>$audits]);
-        }
-        catch(\Exception $e){
+            return Inertia::render('Countries/show', ['country' => $dato, 'audits' => $audits]);
+        } catch (\Exception $e) {
             return response()->json([
-                'error'=>$e,
-                'mesage'=>'No se pudo obtener los datos'
+                'error' => $e,
+                'mesage' => 'No se pudo obtener los datos'
             ]);
         }
     }
@@ -112,7 +142,7 @@ class CountriesController extends ApiController
      */
     public function update(Request $request, $id)
     {
-        try{
+        try {
             $reglas = [
                 'country_name' => 'required|string|max:255',
                 'country_code' => 'required|string|max:255',
@@ -120,19 +150,18 @@ class CountriesController extends ApiController
             $validated = $request->validate($reglas);
             $dato = Countries::findOrFail($id);
             $dato->update($validated);
-            if(request()->wantsJson()){
-                return response()->json(['message'=>'Registro Actualizado con exito','data'=>$dato],200);
+            if (request()->wantsJson()) {
+                return response()->json(['message' => 'Registro Actualizado con exito', 'data' => $dato], 200);
             }
-        }catch(\Illuminate\Validation\ValidationException $e){
+        } catch (ValidationException $e) {
             // dd($e);
             return response()->json([
-                'error'=>$e->getMessage(),
-                'message'=>'Los datos no son correctos',
-                'details' => method_exists($e, 'errors') ? $e->errors() : null 
-            ],422);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'mesage'=>'No se pudo actualizar los datos']);
+                'error' => $e->getMessage(),
+                'message' => 'Los datos no son correctos',
+                'details' => method_exists($e, 'errors') ? $e->errors() : null
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'mesage' => 'No se pudo actualizar los datos']);
         }
     }
 
@@ -148,13 +177,12 @@ class CountriesController extends ApiController
      */
     public function destroy($id)
     {
-        try{
+        try {
             $dato = Countries::query()->find($id);
             $dato->delete();
-            return response()->json(['message'=>'Eliminado con exito']);
-        }
-        catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'mesage'=>'No se pudo eliminar los datos']);
+            return response()->json(['message' => 'Eliminado con exito']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'mesage' => 'No se pudo eliminar los datos']);
         }
     }
 }

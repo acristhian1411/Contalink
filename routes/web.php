@@ -292,7 +292,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Countries
     Route::prefix('countries')->name('countries.')->group(function () {
         Route::get('/', [CountriesController::class, 'index'])->middleware('permission:countries.index')->name('index');
-        Route::get('/{id}', [CountriesController::class, 'show'])->middleware('permission:countries.show')->name('show');
+        Route::get('/{id}', [CountriesController::class, 'show'])->middleware('permission:countries.show')->name('show')->where('id', '[0-9]+');
+        Route::get('/search', [CountriesController::class, 'search'])->middleware('permission:countries.index')->name('countries.search');
         Route::post('/', [CountriesController::class, 'store'])->middleware('permission:countries.create')->name('store');
         Route::put('/{id}', [CountriesController::class, 'update'])->middleware('permission:countries.update')->name('update');
         Route::delete('/{id}', [CountriesController::class, 'destroy'])->middleware('permission:countries.destroy')->name('destroy');
@@ -301,7 +302,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // States
     Route::prefix('states')->name('states.')->group(function () {
         Route::get('/', [StatesController::class, 'index'])->middleware('permission:states.index')->name('index');
-        Route::get('/{id}', [StatesController::class, 'show'])->middleware('permission:states.show')->name('show');
+        Route::get('/{id}', [StatesController::class, 'show'])->middleware('permission:states.show')->name('show')->where('id', '[0-9]+');
+        Route::get('/search', [StatesController::class, 'search'])->middleware('permission:states.index')->name('state.search');
         Route::post('/', [StatesController::class, 'store'])->middleware('permission:states.create')->name('store');
         Route::put('/{id}', [StatesController::class, 'update'])->middleware('permission:states.update')->name('update');
         Route::delete('/{id}', [StatesController::class, 'destroy'])->middleware('permission:states.destroy')->name('destroy');

@@ -19,4 +19,14 @@ export default defineConfig({
             'axios': path.resolve(__dirname, 'node_modules', 'axios/dist/esm/axios.js'), 
         }
     },
+    server:{
+        proxy:{
+            '/api':{
+                target: 'http://localhost:8000',
+                changeOrigin: true,
+                secure: false,
+                cookieDomainRewrite: 'localhost',
+            }
+        }
+    }
 });
