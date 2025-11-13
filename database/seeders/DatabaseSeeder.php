@@ -15,13 +15,19 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
         $this->call([
+            CountrySeeder::class,
+            AccountPlanSeeder::class,
             IvaTypeSeeder::class,
             PersonTypeSeeder::class,
+            PaymentTypeSeeder::class,
+            ProofPaymentSeeder::class,
             MeasurementUnitsSeeder::class,
             PermissionsSeeder::class,
             PersonSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
+            AssignPermissionSeeder::class,
+            
         ]);
     }
 }
