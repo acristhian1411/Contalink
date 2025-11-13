@@ -22,7 +22,7 @@
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<li><span class="cursor-pointer" on:click={()=>Inertia.visit("/")}>Inicio</span></li>
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<li><span class="cursor-pointer" on:click={()=>Inertia.visit("/tilltypes")}>Tipos de cajas</span></li>
+		<li><span class="cursor-pointer" on:click={()=>Inertia.visit("/till-types")}>Tipos de cajas</span></li>
 	</ul>
 </div>
 {#if tilltype}

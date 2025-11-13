@@ -36,7 +36,7 @@
 	function handleCreateObject() {
 		
 		axios
-			.post(`/tilltypes`, {
+			.post(`/till-types`, {
 				till_type_desc
 			})
 			.then((res) => {
@@ -61,7 +61,7 @@
 	}
 	function handleUpdateObject() {
 		axios
-			.put(`/tilltypes/${id}`, {
+			.put(`/till-types/${id}`, {
 				till_type_desc
 			})
 			.then((res) => {

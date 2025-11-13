@@ -44,7 +44,7 @@ export const locationItems =(user)=> [
 export const configItems =(user)=> [
     {
         label: 'Tipos de cajas',
-        route: '/tilltypes',
+        route: '/till-types',
         icon: BoxesIcon,
         permission: user != undefined && user.permissions != undefined && user.permissions.includes('tilltypes.index')
     },

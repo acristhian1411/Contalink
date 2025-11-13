@@ -28,18 +28,40 @@
 	let total_items;
 	let current_page = 1;
 	let items_per_page = '10';
-	let url = `${appUrl}/tilltypes?`;
+	let url = `${appUrl}/till-types?`;
 	function updateData() {
-		fetchData();
+		fetchData(current_page, items_per_page,orderBy,order );
 		closeModal();
 	}
 
-	async function fetchData(page = current_page, rows = items_per_page) {
+	function assignData(data) {
 		tilltypes = data.data;
 		current_page = data.current_page;
 		total_items = data.per_page;
 		total_pages = data.last_page;
 	}
+	async function fetchData(
+        page = current_page,
+        rows = items_per_page,
+        sort = orderBy,
+        order = order,
+    ) {
+        let ur = `${url}page=${page}&per_page=${rows}&order=${order}&sort_by=${orderBy}`;
+        axios
+            .get(ur)
+            .then((response) => {
+                assignData(response.data);
+            })
+            .catch((err) => {
+                console.log("error", err);
+                // let detail = {
+                //     detail: {
+                //         type: "delete",
+                //         message: err.response.data.message,
+                //     },
+                // };
+            });
+    }
 
 	function closeAlert() {
 		openAlert = false;
@@ -62,7 +84,7 @@
 				authorization: `token: ${token}`,
 			},
 		}
-		axios.delete(`${appUrl}/tilltypes/${id}`, config).then((res) => {
+		axios.delete(`${appUrl}/till-types/${id}`, config).then((res) => {
 			let detail = {
 				detail: {
 					type: 'delete',
@@ -89,7 +111,7 @@
 	}
 	function closeDeleteModal() {
 		openDeleteModal = false;
-		fetchData();
+		fetchData(current_page, items_per_page,orderBy,order );
 	}
 	function sortData(param) {
 		orderBy = param;
@@ -98,11 +120,8 @@
 		} else {
 			order = 'asc';
 		}
-		axios.get('/tilltypes?page='+current_page+'&per_page='+items_per_page+'&order='+order+'&sort_by='+orderBy).then((response) => {
-			tilltypes = response.data.data;
-			current_page = response.data.current_page;
-			total_items = response.data.per_page;
-			total_pages = response.data.last_page;
+		axios.get('/till-types?page='+current_page+'&per_page='+items_per_page+'&order='+order+'&sort_by='+orderBy).then((response) => {
+			assignData(response.data)
 		}).catch((err) => {
 			let detail = {
 				detail: {
@@ -118,11 +137,8 @@
 	}
 	function handleRowsPerPage(event) {
 		items_per_page = event.detail.value;
-		axios.get('/tilltypes?page='+current_page+'&per_page='+items_per_page+'&order='+order+'&sort_by='+orderBy).then((response) => {
-			tilltypes = response.data.data;
-			current_page = response.data.current_page;
-			total_items = response.data.per_page;
-			total_pages = response.data.last_page;
+		axios.get('/till-types?page='+current_page+'&per_page='+items_per_page+'&order='+order+'&sort_by='+orderBy).then((response) => {
+			assignData(response.data)
 		}).catch((err) => {
 			let detail = {
 				detail: {
@@ -134,11 +150,8 @@
 	}
 	function handlePage(event) {
 		current_page = event.detail.value;
-		axios.get('/tilltypes?page='+current_page+'&per_page='+items_per_page+'&order='+order+'&sort_by='+orderBy).then((response) => {
-			tilltypes = response.data.data;
-			current_page = response.data.current_page;
-			total_items = response.data.per_page;
-			total_pages = response.data.last_page;
+		axios.get('/till-types?page='+current_page+'&per_page='+items_per_page+'&order='+order+'&sort_by='+orderBy).then((response) => {
+			assignData(response.data)
 		}).catch((err) => {
 			let detail = {
 				detail: {
@@ -151,15 +164,12 @@
 	function search(event) {
 		search_param = event.target.value;
 		if (search_param == '') {
-			url = `/tilltypes?`;
+			url = `/till-types?`;
 		} else {
-			url = `/tilltypes?till_type_desc=${search_param}&`;
+			url = `/till-types?till_type_desc=${search_param}&`;
 		}
 		axios.get(url).then((response) => {
-			tilltypes = response.data.data;
-			current_page = response.data.current_page;
-			total_items = response.data.per_page;
-			total_pages = response.data.last_page;
+			assignData(response.data);
 		}).catch((err) => {
 			if(err.response.data.message){
 				let detail = {
@@ -172,10 +182,7 @@
 		});
 	}
 	onMount(async () => {
-		// if(!isLoggedIn()){
-		// 	goto('/login');
-		// }
-		fetchData();
+		assignData(data);
 	});
 </script>
 <svelte:head>
@@ -243,7 +250,7 @@
 						<td class="text-center">{tilltype.till_type_desc}</td>
 						{#if user.permissions != undefined && user.permissions.includes('tilltypes.show')}
 							<td>
-								<button class="btn btn-info" use:inertia={{ href: `/tilltypes/${tilltype.id}` }}>
+								<button class="btn btn-info" use:inertia={{ href: `/till-types/${tilltype.id}` }}>
 									Mostrar
 								</button>
 							</td>
