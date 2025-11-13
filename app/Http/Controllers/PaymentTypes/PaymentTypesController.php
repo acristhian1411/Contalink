@@ -52,7 +52,7 @@ class PaymentTypesController extends ApiController
                 'details' => method_exists($e, 'errors') ? $e->errors() : null
             ], 422);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo crear el registro']);
+            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo crear el registro'],400);
         }
     }
 
@@ -60,7 +60,7 @@ class PaymentTypesController extends ApiController
      * Display the specified resource.
      *
      * @param  \App\Models\PaymentTypes  $paymentTypes
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function show($id)
     {
@@ -72,7 +72,7 @@ class PaymentTypesController extends ApiController
             }
             return Inertia::render('PaymentTypes/show', ['paymentTypes' => $paymentTypes, 'audits' => $audits]);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo obtener los datos']);
+            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo obtener los datos'],500);
         }
     }
 
@@ -81,7 +81,7 @@ class PaymentTypesController extends ApiController
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\PaymentTypes  $paymentTypes
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function update(Request $request, $id)
     {
@@ -102,7 +102,7 @@ class PaymentTypesController extends ApiController
                 'details' => method_exists($e, 'errors') ? $e->errors() : null
             ], 422);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo actualizar el registro']);
+            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo actualizar el registro'],400);
         }
     }
 
@@ -110,7 +110,7 @@ class PaymentTypesController extends ApiController
      * Remove the specified resource from storage.
      *
      * @param  \App\Models\PaymentTypes  $paymentTypes
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
@@ -119,7 +119,7 @@ class PaymentTypesController extends ApiController
             $paymentTypes->delete();
             return response()->json(['message' => 'Eliminado con exito']);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo eliminar el registro']);
+            return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo eliminar el registro'],500);
         }
     }
 }

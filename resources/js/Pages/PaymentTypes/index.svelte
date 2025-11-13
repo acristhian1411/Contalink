@@ -27,7 +27,7 @@
     let total_items;
     let current_page = 1;
     let items_per_page = "10";
-    let url = `/paymenttypes`;
+    let url = `/payment-types`;
 
     function updateData() {
         fetchData(current_page, items_per_page, orderBy, order);
@@ -85,7 +85,7 @@
                 authorization: `token: ${token}`,
             },
         };
-        axios.delete(`/paymenttypes/${id}`, config).then((res) => {
+        axios.delete(`/payment-types/${id}`, config).then((res) => {
             let detail = {
                 detail: {
                     type: "delete",
@@ -138,9 +138,9 @@
     function search(event) {
         search_param = event.target.value;
         if (search_param == "") {
-            url = `${appUrl}/api/paymenttypes?`;
+            url = `${appUrl}/payment-types?`;
         } else {
-            url = `${appUrl}/api/paymenttypes?paymentTypeDesc=${search_param}&`;
+            url = `${appUrl}/payment-types?payment_type_desc=${search_param}&`;
         }
         fetchData(1, items_per_page, orderBy, order);
     }
@@ -237,7 +237,7 @@
                                 <button
                                     class="btn btn-info"
                                     use:inertia={{
-                                        href: `/paymenttypes/${payment_type.id}`,
+                                        href: `/payment-types/${payment_type.id}`,
                                     }}>Mostrar</button
                                 >
                             </td>

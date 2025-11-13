@@ -48,21 +48,21 @@ export const configItems =(user)=> [
         icon: BoxesIcon,
         permission: user != undefined && user.permissions != undefined && user.permissions.includes('tilltypes.index')
     },
-    {
-        label: 'Tipos de IVA',
-        route: '/ivatypes',
-        icon: BoxesIcon,
-        permission: user != undefined && user.permissions != undefined && user.permissions.includes('ivatypes.index')
-    },
-    {
-        label: 'Tipo de Personas',
-        route: '/persontypes',
-        icon: BoxesIcon,
-        permission: user != undefined && user.permissions != undefined && user.permissions.includes('persontypes.index')
-    },
+    // {
+    //     label: 'Tipos de IVA',
+    //     route: '/iva-types',
+    //     icon: BoxesIcon,
+    //     permission: user != undefined && user.permissions != undefined && user.permissions.includes('ivatypes.index')
+    // },
+    // {
+    //     label: 'Tipo de Personas',
+    //     route: '/person-types',
+    //     icon: BoxesIcon,
+    //     permission: user != undefined && user.permissions != undefined && user.permissions.includes('persontypes.index')
+    // },
     {
         label: 'Tipos de pago',
-        route: '/paymenttypes',
+        route: '/payment-types',
         icon: BoxesIcon,
         permission: user != undefined && user.permissions != undefined && user.permissions.includes('paymenttypes.index')
     },
