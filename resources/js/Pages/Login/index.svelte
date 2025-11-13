@@ -3,6 +3,7 @@
     import { Inertia } from '@inertiajs/inertia';
     let email = '';
     let password = '';
+    let remember = false;
     let alertMessage = '';
     let alertType = '';
 	  let openAlert = false;
@@ -17,22 +18,41 @@
 		alertMessage = event.detail.message;
 	}
     const login = async () => {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-      const response = await fetch('/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      try {
+        const response = await axios.post('/login', {
+          email,
+          password,
+          remember
+        });
   
-      if (response.ok) {
-        // Redirigir o manejar éxito
-        OpenAlertMessage({detail: {type: 'success', message: 'Inicio de sesión exitoso'}});
-        Inertia.visit('/');
-      } else {
-        OpenAlertMessage({detail: {type: 'error', message: response.data.message}});
+        if (response.data.success) {
+          OpenAlertMessage({detail: {type: 'success', message: 'Inicio de sesión exitoso'}});
+          setTimeout(() => {
+            Inertia.visit('/');
+          }, 500);
+        }
+      } catch (error) {
+        if (error.response) {
+          // Handle different error status codes
+          if (error.response.status === 422) {
+            // Validation errors (invalid credentials)
+            const errors = error.response.data.errors;
+            const errorMessage = errors.email?.[0] || errors.password?.[0] || 'Credenciales inválidas';
+            OpenAlertMessage({detail: {type: 'error', message: errorMessage}});
+          } else if (error.response.status === 419) {
+            // CSRF token error
+            OpenAlertMessage({detail: {type: 'error', message: 'Su sesión ha expirado. Por favor, recargue la página e intente nuevamente.'}});
+          } else if (error.response.status === 401) {
+            // Authentication error
+            OpenAlertMessage({detail: {type: 'error', message: 'No autorizado. Verifique sus credenciales.'}});
+          } else {
+            // Generic error
+            OpenAlertMessage({detail: {type: 'error', message: 'Error al iniciar sesión. Por favor, intente nuevamente.'}});
+          }
+        } else {
+          // Network or other errors
+          OpenAlertMessage({detail: {type: 'error', message: 'Error de conexión. Por favor, verifique su conexión a internet.'}});
+        }
       }
     };
   </script>
@@ -68,7 +88,7 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-start">
                             <div class="flex items-center h-5">
-                              <input id="remember" aria-describedby="remember" type="checkbox" class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800" required="">
+                              <input id="remember" bind:checked={remember} aria-describedby="remember" type="checkbox" class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800">
                             </div>
                             <div class="ml-3 text-sm">
                               <label for="remember" class="text-gray-500 dark:text-gray-300">Recordarme</label>

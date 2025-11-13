@@ -13,9 +13,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         // Security middleware for all requests
-        $middleware->append(\App\Http\Middleware\ForceHttps::class);
-        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        // $middleware->append(\App\Http\Middleware\ForceHttps::class);
+        // $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         
+        $middleware->api(append: [
+            \App\Http\Middleware\ForceHttps::class,
+            \App\Http\Middleware\SecurityHeaders::class,
+        ]);
+
         // Middleware aliases
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,

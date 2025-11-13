@@ -14,9 +14,11 @@ class PersonTypeSeeder extends Seeder
      */
     public function run(): void
     {
+        if(DB::table('person_types')->count() > 0){
+            return;
+        }
         PersonTypes::firstOrCreate(['id'=>0,'p_type_desc'=>'Funcionario','created_at'=> now(), 'updated_at'=> now()]);
         PersonTypes::firstOrCreate(['id'=>1,'p_type_desc'=>'Proveedor','created_at'=> now(), 'updated_at'=> now()]);
         PersonTypes::firstOrCreate(['id'=>2,'p_type_desc'=>'Cliente','created_at'=> now(), 'updated_at'=> now()]);
-        
     }
 }

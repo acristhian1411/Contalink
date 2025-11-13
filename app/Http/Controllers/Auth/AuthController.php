@@ -22,14 +22,29 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        // Subtask 3.1: Add request validation
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-        if (Auth::attempt($credentials)) {
+        // Subtask 3.3: Add remember me support
+        $credentials = $request->only('email', 'password');
+        $remember = $request->boolean('remember');
+
+        // Subtask 3.2: Improve login method response
+        if (Auth::attempt($credentials, $remember)) {
+            // Keep session regeneration for security
             $request->session()->regenerate();
+            
+            // Return proper JSON structure with success flag
             return response()->json(['success' => true]);
         }
 
-        return response()->json(['error' => 'Invalid credentials'], 401);
+        // Use ValidationException for authentication failures
+        throw ValidationException::withMessages([
+            'email' => __('auth.failed'),
+        ]);
     }
 
     public function logout(Request $request)

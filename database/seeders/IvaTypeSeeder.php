@@ -14,26 +14,28 @@ class IvaTypeSeeder extends Seeder
      */
     public function run(): void
     {
-        IvaType::firstOrCreate([
-            'id'=>0,
-            'iva_type_percent'=>0,
-            'iva_type_desc'=>'Exentas',
-            'created_at'=> now(), 
-            'updated_at'=> now()]); 
-        IvaType::firstOrCreate([
-            'id'=>1,
-            'iva_type_percent'=>10,
-            'iva_type_desc'=>'10%',
-            'created_at'=> now(),
-            'updated_at'=> now()
-        ]);
-        IvaType::firstOrCreate([
-            'id'=>2,
-            'iva_type_percent'=>5,
-            'iva_type_desc'=>'5%',
-            'created_at'=> now(), 
-            'updated_at'=> now()
-        ]);
+        if (IvaType::count() == 0) {
+            IvaType::create([
+                'id'=>0,
+                'iva_type_percent'=>0,
+                'iva_type_desc'=>'Exentas',
+                'created_at'=> now(), 
+                'updated_at'=> now()]); 
+            IvaType::create([
+                'id'=>1,
+                'iva_type_percent'=>10,
+                'iva_type_desc'=>'10%',
+                'created_at'=> now(),
+                'updated_at'=> now()
+            ]);
+            IvaType::create([
+                'id'=>2,
+                'iva_type_percent'=>5,
+                'iva_type_desc'=>'5%',
+                    'created_at'=> now(), 
+                'updated_at'=> now()
+            ]);
+        }
         
     }
 }
