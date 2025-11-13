@@ -14,5 +14,7 @@ class ProofPaymentSeeder extends Seeder
     public function run(): void
     {
         ProofPayments::firstOrCreate(['id' => 1], ['proof_payment_desc' => 'Ninguno', 'payment_type_id' => 1]);
+        ProofPayments::firstOrCreate(['id'=> 2], ['proof_payment_desc' => 'Nro. Transacción', 'payment_type_id' => 2]);
+        ProofPayments::firstOrCreate(['id'=> 3], ['proof_payment_desc' => 'Nro. Transacción', 'payment_type_id' => 3]);
     }
 }

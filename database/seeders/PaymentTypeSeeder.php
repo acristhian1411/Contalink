@@ -14,5 +14,7 @@ class PaymentTypeSeeder extends Seeder
     public function run(): void
     {
         PaymentTypes::firstOrCreate(['id' => 1], ['payment_type_desc' => 'Efectivo']);
+        PaymentTypes::firstOrCreate(['id'=> 2], ['payment_type_desc'=> 'Tarjeta de crédito']);
+        PaymentTypes::firstOrCreate(['id'=> 3], ['payment_type_desc'=> 'Tarjeta de débito']);
     }
 }
