@@ -28,7 +28,7 @@
 	let total_items;
 	let current_page = 1;
 	let items_per_page = '10';
-	let url = `/measurments?`;
+	let url = `/measurement-units?`;
 
 	function updateData() {
 		fetchData(current_page, items_per_page, orderBy, order);
@@ -76,7 +76,7 @@
 				authorization: `token: ${token}`,
 			},
 		}
-		axios.delete(`/measurments/${id}`).then((res) => {
+		axios.delete(`/measurement-units/${id}`).then((res) => {
 			let detail = {
 				detail: {
 					type: 'delete',
@@ -129,9 +129,9 @@
 	function search(event) {
 		search_param = event.target.value;
 		if (search_param == '') {
-			url = `${appUrl}/measurments?page=${current_page}&per_page=${items_per_page}&order=${order}&sort_by=${orderBy}`;
+			url = `${appUrl}/measurement-units?page=${current_page}&per_page=${items_per_page}&order=${order}&sort_by=${orderBy}`;
 		} else {
-			url = `${appUrl}/measurments?unit_name=${search_param}&unit_abbreviation=${search_param}&page=${current_page}&per_page=${items_per_page}&order=${order}&sort_by=${orderBy}`;
+			url = `${appUrl}/measurement-units?unit_name=${search_param}&unit_abbreviation=${search_param}&page=${current_page}&per_page=${items_per_page}&order=${order}&sort_by=${orderBy}`;
 		}
 		fetchData(current_page, items_per_page, orderBy, order);
 	}
@@ -213,7 +213,7 @@
 						<td class="text-center">{measurment.unit_abbreviation}</td>
 						{#if user.permissions != undefined && user.permissions.includes('measurement_units.show')}
 							<td>
-								<button class="btn btn-info" use:inertia={{ href: `/measurments/${measurment.id}` }}>Mostrar</button>
+								<button class="btn btn-info" use:inertia={{ href: `/measurement-units/${measurment.id}` }}>Mostrar</button>
 							</td>
 						{/if}
 						{#if user.permissions != undefined && user.permissions.includes('measurement_units.update')}

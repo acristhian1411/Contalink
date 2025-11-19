@@ -40,7 +40,7 @@
 	});
 	// http://127.0.0.1:5173/tilltypes
 	function handleCreateObject() {
-		axios.post('/measurments',{
+		axios.post('/measurement-units',{
 			unit_name: unit_name,
 			unit_abbreviation: unit_abbreviation,	
 			allows_decimals: Boolean(allows_decimals)
@@ -66,10 +66,10 @@
 			});
 	}
 	function handleUpdateObject() {
-		axios.put(`/measurments/${id}`, {
+		axios.put(`/measurement-units/${id}`, {
 			unit_name: unit_name,
 			unit_abbreviation: unit_abbreviation,
-			allows_decimals: allows_decimals
+			allows_decimals: Boolean(allows_decimals)
 		})
 			.then((res) => {
 				let detail = {

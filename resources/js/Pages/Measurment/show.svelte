@@ -5,15 +5,15 @@
     import {Inertia} from '@inertiajs/inertia';
     export let appUrl
     export const id = 0;
-    export let country = {};
+    export let measurementUnit = {};
     export let audits = [];
     let error = null;
-    let url = `${appUrl}/countries/`;
+    let url = `${appUrl}/measurement-units/`;
 
     
 </script>
 <svelte:head>
-    <title>{country?.country_name}</title>
+    <title>{measurementUnit?.unit_name}</title>
 </svelte:head>
 {#if error}
 	<p>{error}</p>
@@ -23,14 +23,14 @@
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <li><span class="cursor-pointer" on:click={()=>Inertia.visit("/")}>Inicio</span></li>
         <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <li><span class="cursor-pointer" on:click={()=>Inertia.visit("/countries")}>Paises</span></li>
+        <li><span class="cursor-pointer" on:click={()=>Inertia.visit("/measurement-units")}>Unidades de medida</span></li>
 	</ul>
 </div>
-{#if country}
+{#if measurementUnit}
     <div transition:blur>
         <h1 class="text-xl font-bold">Descripcion:</h1>
-        <p class="text-1xl">{country.country_name}</p>
-        <p class="text-1xl">{country.country_code}</p>
+        <p class="text-1xl">{measurementUnit.unit_name}</p>
+        <p class="text-1xl">{measurementUnit.unit_abbreviation}</p>
     </div>
 {/if}
 {#if audits}

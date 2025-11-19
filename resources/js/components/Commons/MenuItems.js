@@ -74,7 +74,7 @@ export const configItems =(user)=> [
     },
     {
         label: 'Unidades de medida',
-        route:'/measurments',
+        route:'/measurement-units',
         icon: BoxesIcon,
         permission: user != undefined && user.permissions != undefined && user.permissions.includes('measurement_units.index')
     }
