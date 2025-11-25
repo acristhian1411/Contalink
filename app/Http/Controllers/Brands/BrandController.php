@@ -11,7 +11,7 @@ class BrandController extends ApiController
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function index()
     {
@@ -31,7 +31,7 @@ class BrandController extends ApiController
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function store(Request $request)
     {
@@ -59,7 +59,7 @@ class BrandController extends ApiController
      * Display the specified resource.
      *
      * @param  int $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function show($id)
     {
@@ -80,7 +80,7 @@ class BrandController extends ApiController
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Brand  $brand
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function update(Request $request, $id)
     {
@@ -108,7 +108,7 @@ class BrandController extends ApiController
      * Remove the specified resource from storage.
      *
      * @param  \App\Models\Brand  $brand
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function destroy($id)
     {
