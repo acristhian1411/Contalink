@@ -47,6 +47,7 @@
 
 	function fetchData(page = current_page, rows = items_per_page,sort_by = orderBy,order = order) {
 		axios.get(`${url}sort_by=${sort_by}&order=${order}&page=${page}&per_page=${rows}`).then((response) => {
+			// console.log(response.data.data)
 			assignData(response.data);
 		}).catch((err) => {
 			error = err.request.response;
@@ -57,7 +58,6 @@
 	}
 
 	function OpenAlertMessage(event) {
-		console.log('details desde index',event.detail);
 		openAlert = true;
 		alertType = event.detail.type;
 		alertMessage = event.detail.message;
@@ -123,7 +123,7 @@
 		if (search_param == '') {
 			url = `${appUrl}/categories?`;
 		} else {
-			url = `${appUrl}/categories?cat_desc=${search_param}`;
+			url = `${appUrl}/categories?cat_desc=${search_param}&`;
 		}
 		fetchData(1, items_per_page,orderBy,order);
 	}
@@ -131,7 +131,9 @@
 		assignData(data);
 	});
 </script>
-
+<svelte:head>
+	<title>Categorias</title>
+</svelte:head>
 {#if error}
 	<ErrorAlert message={error} on:clearError={ClearError} />
 {/if}

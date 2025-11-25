@@ -13,7 +13,7 @@ class CategoriesController extends ApiController
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function index()
     {
@@ -33,7 +33,7 @@ class CategoriesController extends ApiController
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function store(SecureBasicRequest $request)
     {
@@ -57,7 +57,7 @@ class CategoriesController extends ApiController
      * Display the specified resource.
      *
      * @param  \App\Models\Categories  $categories
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function show($id)
     {
@@ -78,7 +78,7 @@ class CategoriesController extends ApiController
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Categories  $categories
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function update(SecureBasicRequest $request, $id)
     {
@@ -102,7 +102,7 @@ class CategoriesController extends ApiController
      * Remove the specified resource from storage.
      *
      * @param  \App\Models\Categories  $categories
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|mixed
      */
     public function destroy($id)
     {
