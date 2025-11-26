@@ -33,7 +33,23 @@
 #### app/Http/Controllers/CspReportController.php
 - **report()**: Handle incoming Content Security Policy violation reports for security monitoring
 - **notifySecurityTeam()**: Send high-priority CSP violation alerts to security team for immediate attention
-### 2025-01-06
+### 2025-11-25
+
+#### app/Http/Controllers/Categories/CategoriesController.php
+- **index()**: Retrieve and display paginated listing of categories with filtering and sorting capabilities
+- **store()**: Create and store new category record with validated cat_desc field
+- **show()**: Display specific category record with audit history for API and web requests
+- **update()**: Update existing category record with validated cat_desc data
+- **destroy()**: Delete category record from database with soft delete support
+
+### 2025-11-25
+
+#### app/Http/Controllers/Brands/BrandController.php
+- **index()**: Retrieve and display paginated listing of brands with filtering and sorting capabilities
+- **store()**: Create and store new brand record with validation for brand_name field
+- **show()**: Display specific brand record with audit history for API and web requests
+- **update()**: Update existing brand record with validated brand_name data
+- **destroy()**: Delete brand record from database with soft delete support
 
 #### app/Http/Controllers/Countries/CountriesController.php
 - **index()**: Enhanced PHPDoc for countries listing with filtering, sorting and dual response format support
