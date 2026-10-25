@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
-
 
 export default defineConfig({
     plugins: [
@@ -10,18 +10,19 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.js'],
             refresh: true,
         }),
-        svelte({}),
+        svelte(),
+        tailwindcss(),
     ],
     resolve: {
         alias: {
-            '@components': `${__dirname}/resources/js/components`,
-            '@pages': `${__dirname}/resources/js/Pages`,
-            'axios': path.resolve(__dirname, 'node_modules', 'axios/dist/esm/axios.js'), 
+            '@components': path.resolve(import.meta.dirname, 'resources/js/components'),
+            '@pages': path.resolve(import.meta.dirname, 'resources/js/Pages'),
+            'axios': path.resolve(import.meta.dirname, 'node_modules', 'axios/dist/esm/axios.js'),
         }
     },
-    server:{
-        proxy:{
-            '/api':{
+    server: {
+        proxy: {
+            '/api': {
                 target: 'http://localhost:8000',
                 changeOrigin: true,
                 secure: false,

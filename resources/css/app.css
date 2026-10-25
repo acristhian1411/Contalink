@@ -1,3 +1,36 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: dim --default;
+}
+
+:root {
+  --color-primary: #007aff;
+  --color-primary-content: #ffffff;
+  --color-secondary: #b5281b;
+  --color-secondary-content: #ffffff;
+  --color-info: #32b33f;
+  --color-info-content: #ffffff;
+  --color-warning: #cc9e1f;
+  --color-warning-content: #ffffff;
+}
+
+.btn-primary:hover,
+.btn-primary:active {
+  background-color: #005f9e;
+  border-color: #005f9e;
+}
+.btn-secondary:hover,
+.btn-secondary:active {
+  background-color: #9c2116;
+  border-color: #9c2116;
+}
+.btn-info:hover,
+.btn-info:active {
+  background-color: #25852f;
+  border-color: #25852f;
+}
+.btn-warning:hover,
+.btn-warning:active {
+  background-color: #a88420;
+  border-color: #a88420;
+}

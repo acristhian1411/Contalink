@@ -100,6 +100,8 @@
 </div>
 
 <style>
+    @reference "../../../css/app.css";
+
     /* Evita que la lista se cierre al hacer clic (si se usa fuera de un form) */
     /* button: focus + div; */
     /* div:hover {
