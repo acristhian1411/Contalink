@@ -17,8 +17,8 @@ use App\Http\Controllers\Products\ProductsController;
 use App\Http\Controllers\Users\UsersController;
 use App\Http\Controllers\MeasurementUnits\MeasurementUnitsController;
 use App\Http\Controllers\CspReportController;
-use App\Http\Controllers\Web\SalesWebController;
-use App\Http\Controllers\Web\PurchasesWebController;
+use App\Http\Controllers\Sales\SalesController;
+use App\Http\Controllers\Purchases\PurchasesController;
 use App\Http\Controllers\Persons\PersonsController;
 use App\Http\Controllers\Tills\TillsController;
 use App\Http\Controllers\TillsProcess\TillsProcessController;
@@ -72,20 +72,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // SALES MANAGEMENT - Secure Web Routes
     // ========================================
     Route::prefix('sales')->name('sales.')->group(function () {
-        Route::get('/', [SalesWebController::class, 'index'])->middleware('permission:sales.index')->name('index');
-        Route::get('/create', [SalesWebController::class, 'create'])->middleware('permission:sales.create')->name('create');
-        Route::post('/', [SalesWebController::class, 'store'])->middleware('permission:sales.create')->name('store');
-        Route::get('/{id}', [SalesWebController::class, 'show'])->middleware('permission:sales.show')->name('show');
+        Route::get('/', [SalesController::class, 'index'])->middleware('permission:sales.index')->name('index');
+        Route::get('/create', [SalesController::class, 'create'])->middleware('permission:sales.create')->name('create');
+        Route::post('/', [SalesController::class, 'store'])->middleware('permission:sales.create')->name('store');
+        Route::get('/{id}', [SalesController::class, 'show'])->middleware('permission:sales.show')->name('show');
     });
 
     // ========================================
     // PURCHASES MANAGEMENT - Secure Web Routes
     // ========================================
     Route::prefix('purchases')->name('purchases.')->group(function () {
-        Route::get('/', [PurchasesWebController::class, 'index'])->middleware('permission:purchases.index')->name('index');
-        Route::get('/create', [PurchasesWebController::class, 'create'])->middleware('permission:purchases.create')->name('create');
-        Route::post('/', [PurchasesWebController::class, 'store'])->middleware('permission:purchases.create')->name('store');
-        Route::get('/{id}', [PurchasesWebController::class, 'show'])->middleware('permission:purchases.show')->name('show');
+        Route::get('/', [PurchasesController::class, 'index'])->middleware('permission:purchases.index')->name('index');
+        Route::get('/create', [PurchasesController::class, 'create'])->middleware('permission:purchases.create')->name('create');
+        Route::post('/', [PurchasesController::class, 'store'])->middleware('permission:purchases.create')->name('store');
+        Route::get('/{id}', [PurchasesController::class, 'show'])->middleware('permission:purchases.show')->name('show');
     });
 
     // ========================================

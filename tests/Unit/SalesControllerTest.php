@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use Tests\TestCase;
-use App\Http\Controllers\Sales\SaleDeleteController;
+use App\Http\Controllers\Sales\SalesController;
 use App\Models\Products;
 use App\Models\MeasurementUnit;
 use App\Models\Sales;
@@ -11,17 +11,17 @@ use App\Models\SalesDetails;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 
-class SaleDeleteControllerTest extends TestCase
+class SalesControllerTest extends TestCase
 {
     use RefreshDatabase;
 
     /**
-     * Test that the SaleDeleteController can be instantiated
+     * Test that the SalesController can be instantiated
      */
     public function test_controller_can_be_instantiated()
     {
-        $controller = new SaleDeleteController();
-        $this->assertInstanceOf(SaleDeleteController::class, $controller);
+        $controller = new SalesController();
+        $this->assertInstanceOf(SalesController::class, $controller);
     }
 
     /**

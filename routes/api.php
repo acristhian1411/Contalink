@@ -15,18 +15,12 @@ use App\Http\Controllers\Persons\PersonsController;
 use App\Http\Controllers\PersonTypes\PersonTypesController;
 use App\Http\Controllers\Products\ProductsController;
 use App\Http\Controllers\ProofPaypments\ProofPaymentsController;
-use App\Http\Controllers\Purchases\PurchaseDeleteController;
 use App\Http\Controllers\Purchases\PurchasesController;
-use App\Http\Controllers\Purchases\PurchasesReportController;
-use App\Http\Controllers\Purchases\PurchaseStoreController;
 use App\Http\Controllers\PurchasesDetails\PurchasesDetailsController;
 use App\Http\Controllers\RefundDetails\RefundDetailsController;
 use App\Http\Controllers\Refunds\RefundsController;
 use App\Http\Controllers\Roles\RolesController;
-use App\Http\Controllers\Sales\SaleDeleteController;
 use App\Http\Controllers\Sales\SalesController;
-use App\Http\Controllers\Sales\SalesReportController;
-use App\Http\Controllers\Sales\SaleStoreController;
 use App\Http\Controllers\SalesDetails\SalesDetailsController;
 use App\Http\Controllers\States\StatesController;
 use App\Http\Controllers\TillDetailProofPayments\TillDetailProofPaymentsController;
@@ -145,23 +139,18 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
             ->middleware('permission:sales.show')
             ->name('show');
 
-        // Sales validation (for complex business rules)
-        Route::post('/validate', [SalesController::class, 'validateSale'])
-            ->middleware('permission:sales.create')
-            ->name('validate');
-
         // Sales creation via API (for mobile or external systems)
-        Route::post('/', [SaleStoreController::class, 'store'])
+        Route::post('/', [SalesController::class, 'store'])
             ->middleware('permission:sales.create')
             ->name('store');
 
         // Sales deletion with stock reversal
-        Route::delete('/{id}', [SaleDeleteController::class, 'destroy'])
+        Route::delete('/{id}', [SalesController::class, 'destroy'])
             ->middleware('permission:sales.delete')
             ->name('delete');
 
         // Sales reports
-        Route::get('/reports/data', [SalesReportController::class, 'getSalesReport'])
+        Route::get('/reports/data', [SalesController::class, 'getSalesReport'])
             ->middleware('permission:reports.show')
             ->name('reports.data');
     });
@@ -179,17 +168,17 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
             ->name('show');
 
         // Purchase creation via API (for mobile or external systems)
-        Route::post('/', [PurchaseStoreController::class, 'store'])
+        Route::post('/', [PurchasesController::class, 'store'])
             ->middleware('permission:purchases.create')
             ->name('store');
 
         // Purchase deletion with stock reversal
-        Route::delete('/{id}', [PurchaseDeleteController::class, 'destroy'])
+        Route::delete('/{id}', [PurchasesController::class, 'destroy'])
             ->middleware('permission:purchases.delete')
             ->name('delete');
 
         // Purchase reports
-        Route::get('/reports/data', [PurchasesReportController::class, 'getPurchasesReport'])
+        Route::get('/reports/data', [PurchasesController::class, 'getPurchasesReport'])
             ->middleware('permission:reports.show')
             ->name('reports.data');
     });
