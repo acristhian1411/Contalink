@@ -31,7 +31,7 @@ class Persons extends Model implements AuditableContract
 
     public function type()
     {
-        return $this->belongsTo(PersonTypes::class, 'person_type_id');
+        return $this->belongsTo(PersonTypes::class, 'p_type_id');
     }
     public function productsProvider(){
         return $this->hasMany(ProductsProvider::class);
