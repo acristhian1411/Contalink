@@ -53,7 +53,6 @@ class AppServiceProvider extends ServiceProvider
                     }
                     return null;
                 },
-            'appUrl'=> env('APP_URL')
         ]);
     }
 }

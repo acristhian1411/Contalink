@@ -2,15 +2,14 @@
     import { onMount } from 'svelte';
     import {blur} from 'svelte/transition';
     import axios from 'axios';
-    import { Inertia } from '@inertiajs/inertia';
+    import { router } from '@inertiajs/svelte';
     import JsBarcode from 'jsbarcode';
-    export let appUrl
     export let id = 0;
     export let product;
     export let audits;
     let barcodeElement
     let error = null;
-    let url = `${appUrl}/api/products/`;
+    let url = `/api/products/`;
     let barcode_copies = 1
 
     function print(){
@@ -91,7 +90,7 @@
         }
     });
     function goTo(route){
-        Inertia.visit(route);
+        router.visit(route);
     }
 </script>
 <svelte:head>

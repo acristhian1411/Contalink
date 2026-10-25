@@ -1,8 +1,8 @@
 <script>
-    import {Inertia} from '@inertiajs/inertia';
+    import { router } from '@inertiajs/svelte';
     import { CartIcon, MoneyIcon, ProductIcon, BarsIcon, DevolutionIcon} from '@components/Icons/';
     function goTo(url) {
-      Inertia.visit(url);
+      router.visit(url);
     }
   </script>
   

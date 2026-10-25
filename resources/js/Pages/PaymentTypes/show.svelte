@@ -2,16 +2,15 @@
     import { onMount } from 'svelte';
     import {blur} from 'svelte/transition';
     import axios from 'axios';
-    import {Inertia} from '@inertiajs/inertia';
-    export let appUrl
+    import { router } from '@inertiajs/svelte';
     export const id = 0;
     export let paymentTypes;
     export let audits;
     let error = null;
-    let url = `${appUrl}/api/paymenttypes/`;
+    let url = `/payment-types/`;
 
     function goTo(route){
-        Inertia.visit(route);
+        router.visit(route);
     }
 </script>
 <svelte:head>
@@ -25,7 +24,7 @@
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <li><span class="cursor-pointer" on:click={()=>goTo("/")}>Inicio</span></li>
         <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <li><span class="cursor-pointer" on:click={()=>goTo("/paymenttypes")}>Tipos de pago</span></li>
+        <li><span class="cursor-pointer" on:click={()=>goTo("/payment-types")}>Tipos de pago</span></li>
 	</ul>
 </div>
 {#if paymentTypes}

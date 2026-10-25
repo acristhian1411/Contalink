@@ -2,7 +2,7 @@
 <script>
 	// @ts-nocheck
 	import { onMount } from 'svelte';
-	import { inertia } from '@inertiajs/inertia-svelte';
+	import { router } from '@inertiajs/svelte';
 	// import { isLoggedIn, getToken} from '../../services/authservice'
 	// import {goto} from '$app/navigation';
 	import axios from 'axios';
@@ -12,7 +12,6 @@
 	import Form from './form.svelte';
 	// import { appUrl } from '$env/static/public';
 	export let user
-    export let appUrl
 	export let data = [];
 	let cities = [];
 	let error = null;
@@ -31,7 +30,7 @@
 	let total_items;
 	let current_page = 1;
 	let items_per_page = '10';
-	let url = `${appUrl}/cities?`;
+	let url = `/cities?`;
 
 	function updateData() {
 		fetchData();
@@ -62,11 +61,9 @@
 	function deleteRecord() {
 		let token = '';
 		let config = {
-			headers: {
-				authorization: `token: ${token}`,
-			},
+			headers: {},
 		}
-		axios.delete(`${appUrl}/cities/${id}`, config).then((res) => {
+		axios.delete(`/cities/${id}`, config).then((res) => {
 			let detail = {
 				detail: {
 					type: 'delete',
@@ -155,9 +152,9 @@
 	function search(event) {
 		search_param = event.target.value;
 		if (search_param == '') {
-			url = `${appUrl}/cities?`;
+			url = `/cities?`;
 		} else {
-			url = `${appUrl}/cities?city_name=${search_param}&`;
+			url = `/cities?city_name=${search_param}&`;
 		}
 		axios.get(url).then((response) => {
 			cities = response.data.data;
@@ -260,7 +257,7 @@
 						<td class="text-center">{city.country_name}</td>
 						{#if user.permissions != undefined && user.permissions.includes('cities.show')}
 							<td>
-								<button class="btn btn-info" use:inertia={{ href: `/cities/${city.id}` }}>Mostrar</button>
+								<button class="btn btn-info" on:click={() => router.visit(`/cities/${city.id}`)}>Mostrar</button>
 							</td>
 						{/if}
 						{#if user.permissions != undefined && user.permissions.includes('cities.update')}

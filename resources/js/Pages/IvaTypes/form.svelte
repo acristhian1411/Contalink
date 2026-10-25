@@ -15,9 +15,7 @@
 	let errors = null;
 	let token = '';
 	let config = {
-		headers: {
-			authorization: `token: ${token}`,
-		},
+		headers: {},
 	}
 	function close() {
 		dispatch('close');
@@ -35,11 +33,11 @@
 			iva_type_percent = item.iva_type_percent;
 		}
 	});
-	// http://127.0.0.1:5173/tilltypes
+	// http://127.0.0.1:5173/till-types
 	function handleCreateObject() {
 		
 		axios
-			.post(`/api/ivatypes`, {
+			.post(`/api/iva-types`, {
 				iva_type_desc,
 				iva_type_percent
 			},config)
@@ -65,7 +63,7 @@
 	}
 	function handleUpdateObject() {
 		axios
-			.put(`/api/ivatypes/${id}`, {
+			.put(`/iva-types/${id}`, {
 				iva_type_desc,
 				iva_type_percent
 			},config)

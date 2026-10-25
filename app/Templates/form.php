@@ -11,7 +11,6 @@ function generateFormComponent($modelName, $fields) {
     import { onMount } from 'svelte';
     import { createEventDispatcher } from 'svelte';
     import {Textfield} from '@components/FormComponents';
-    export let appUrl;
     export let edit;
     export let item;
     export let token = '';
@@ -21,7 +20,6 @@ function generateFormComponent($modelName, $fields) {
     let errors = null;
     let config = {
         headers: {
-            authorization: `token: \${token}`,
         },
     };
     
@@ -90,7 +88,7 @@ function generateFormComponent($modelName, $fields) {
 
     async function handleUpdateObject() {
         try {
-            const res = await axios.put(`/api/{$modelNameLower}s/\${id}`, { ";
+            const res = await axios.put(`/api/{$modelNameLower}s/${id}`, { ";
 
     // Pasar cada campo como datos para la actualización
     foreach ($fields as $field) {

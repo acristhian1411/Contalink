@@ -1,14 +1,13 @@
 <script>
     // @ts-nocheck
     import { onMount } from "svelte";
-    import { inertia } from "@inertiajs/inertia-svelte";
+    import { router } from '@inertiajs/svelte';
     import axios from "axios";
     import { Pagination, DeleteModal, Modal } from "@components/utilities/";
     import { Alert, ErrorAlert } from "@components/Alerts/";
     import { SearchIcon, SortIcon } from "@components/Icons/";
     import Form from "./form.svelte";
     export let user;
-    export let appUrl;
     export let data;
     let payment_types = [];
     let error = null;
@@ -81,9 +80,7 @@
     function deleteRecord() {
         let token = "";
         let config = {
-            headers: {
-                authorization: `token: ${token}`,
-            },
+            headers: {},
         };
         axios.delete(`/payment-types/${id}`, config).then((res) => {
             let detail = {
@@ -138,9 +135,9 @@
     function search(event) {
         search_param = event.target.value;
         if (search_param == "") {
-            url = `${appUrl}/payment-types?`;
+            url = `/payment-types?`;
         } else {
-            url = `${appUrl}/payment-types?payment_type_desc=${search_param}&`;
+            url = `/payment-types?payment_type_desc=${search_param}&`;
         }
         fetchData(1, items_per_page, orderBy, order);
     }
@@ -236,9 +233,7 @@
                             <td>
                                 <button
                                     class="btn btn-info"
-                                    use:inertia={{
-                                        href: `/payment-types/${payment_type.id}`,
-                                    }}>Mostrar</button
+                                    on:click={() => router.visit(`/payment-types/${payment_type.id}`)}>Mostrar</button
                                 >
                             </td>
                         {/if}

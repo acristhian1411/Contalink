@@ -2,16 +2,15 @@
     import { onMount } from 'svelte';
     import axios from 'axios';
     import {blur} from 'svelte/transition';
-    import { Inertia } from '@inertiajs/inertia';
-    export let appUrl
+    import { router } from '@inertiajs/svelte';
     export const id = 0;
     export let person_type = {};
     export let audits = [];
     let error = null;
-    let url = `${appUrl}/api/persontypes/`;
+    let url = `/person-types/`;
 
     function goTo(route){
-        Inertia.visit(route);
+        router.visit(route);
     }
 </script>
 {#if error}
@@ -22,7 +21,7 @@
         <!-- svelte-ignore a11y-click-events-have-key-events -->
 		<li><span class="cursor-pointer" on:click={()=>goTo("/")}>Inicio</span></li>
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<li><span class="cursor-pointer" on:click={()=>goTo("/persontypes")}>Tipos de personas</span></li>
+		<li><span class="cursor-pointer" on:click={()=>goTo("/person-types")}>Tipos de personas</span></li>
 	</ul>
 </div>
 {#if person_type}

@@ -2,13 +2,12 @@
     import { onMount } from 'svelte';
     import {blur} from 'svelte/transition';
     import axios from 'axios';
-    import {Inertia} from '@inertiajs/inertia';
-    export let appUrl
+    import { router } from '@inertiajs/svelte';
     export const id = 0;
     export let tilltype = {};
     export let audits = [];
     let error = null;
-    let url = `${appUrl}/tilltypes/`;
+    let url = `/till-types/`;
 
 </script>
 {#if error}
@@ -20,9 +19,9 @@
 <div class="breadcrumbs text-md mb-4">
 	<ul>
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<li><span class="cursor-pointer" on:click={()=>Inertia.visit("/")}>Inicio</span></li>
+		<li><span class="cursor-pointer" on:click={()=>router.visit("/")}>Inicio</span></li>
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<li><span class="cursor-pointer" on:click={()=>Inertia.visit("/till-types")}>Tipos de cajas</span></li>
+		<li><span class="cursor-pointer" on:click={()=>router.visit("/till-types")}>Tipos de cajas</span></li>
 	</ul>
 </div>
 {#if tilltype}

@@ -2,7 +2,7 @@
 <script>
 	// @ts-nocheck
 	import { onMount } from 'svelte';
-	import { inertia } from '@inertiajs/inertia-svelte';
+	import { router } from '@inertiajs/svelte';
 	// import { isLoggedIn, getToken} from '../../services/authservice'
 	// import {goto} from '$app/navigation';
 	import axios from 'axios';
@@ -12,7 +12,6 @@
 	import Form from './form.svelte';
 	// import { appUrl } from '$env/static/public';
 	export let user
-    export let appUrl
 	export let data;
 	let brands = [];
 	let error = null;
@@ -31,7 +30,7 @@
 	let total_items;
 	let current_page = 1;
 	let items_per_page = '10';
-	let url = `${appUrl}/brands?`;
+	let url = `/brands?`;
 
 	function updateData() {
 		fetchData(current_page, items_per_page, orderBy, order);
@@ -71,11 +70,9 @@
 	function deleteRecord() {
 		let token = '';
 		let config = {
-			headers: {
-				authorization: `token: ${token}`,
-			},
+			headers: {},
 		}
-		axios.delete(`${appUrl}/brands/${id}`, config).then((res) => {
+		axios.delete(`/brands/${id}`, config).then((res) => {
 			let detail = {
 				detail: {
 					type: 'delete',
@@ -212,7 +209,7 @@
 						<td class="text-center">{brand.brand_desc}</td>
 						{#if user.permissions != undefined && user.permissions.includes('brands.show')}
 							<td>
-								<button class="btn btn-info" use:inertia={{ href: `/brands/${brand.id}` }}>Mostrar</button>
+								<button class="btn btn-info" on:click={() => router.visit(`/brands/${brand.id}`)}>Mostrar</button>
 							</td>
 						{/if}
 						{#if user.permissions != undefined && user.permissions.includes('brands.update')}

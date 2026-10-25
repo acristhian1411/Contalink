@@ -2,7 +2,7 @@
 
     // import {logout} from '../../services/authservice.js'
 	import {Home,BoxesIcon, ExitIcon, ConfigIcon, FinanceIcon, LocationIcon, UserIcon, ReportIcon, ProductIcon, PeopleIcon} from '@components/Icons/';
-	import {Inertia} from '@inertiajs/inertia';
+	import { router } from '@inertiajs/svelte';
     import DropdownMenu from './DropdownMenu.svelte';
 	import {locationItems,configItems,adminItems,userItems,reportsItems, productsItems, personsItems} from './MenuItems.js';
 	import { sidebarOpen } from './sidebar.js';
@@ -18,12 +18,12 @@
 	});
 
 	function goTo(route){
-		Inertia.visit(route);
+		router.visit(route);
 	}
 
 	function logout() {
-		Inertia.post('/logout');
-		// Inertia.visit('/');
+		router.post('/logout');
+		// router.visit('/');
 	}
 
 </script>

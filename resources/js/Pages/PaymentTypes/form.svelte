@@ -5,7 +5,6 @@
     import { onMount } from "svelte";
     import { createEventDispatcher } from "svelte";
     import { Textfield } from "@components/FormComponents";
-    import { bind } from "svelte/internal";
     import Form from "@pages/ProofPayments/form.svelte";
 
     const dispatch = createEventDispatcher();
@@ -31,7 +30,7 @@
             paymentTypeDesc = item.paymentTypeDesc;
         }
     });
-    // http://127.0.0.1:5173/tilltypes
+    // http://127.0.0.1:5173/till-types
     function handleCreateObject(event) {
         event.preventDefault();
         axios

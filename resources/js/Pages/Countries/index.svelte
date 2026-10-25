@@ -1,14 +1,13 @@
 <script>
     // @ts-nocheck
     import { onMount } from "svelte";
-    import { inertia } from "@inertiajs/inertia-svelte";
+    import { router } from '@inertiajs/svelte';
     // import axios from "axios";
     import { Pagination, DeleteModal, Modal } from "@components/utilities/";
     import { Alert, ErrorAlert } from "@components/Alerts/";
     import { SearchIcon, SortIcon } from "@components/Icons/";
     import Form from "./form.svelte";
     export let user;
-    export let appUrl;
     export let data;
     let countries = [];
     let error = null;
@@ -81,9 +80,7 @@
     function deleteRecord() {
         let token = "";
         let config = {
-            headers: {
-                authorization: `token: ${token}`,
-            },
+            headers: {},
         };
         axios
             .delete(`/countries/${id}`, { withCredentials: true })
@@ -140,9 +137,9 @@
     function search(event) {
         search_param = event.target.value;
         if (search_param == "") {
-            url = `${appUrl}/countries?page=${current_page}&per_page=${items_per_page}&order=${order}&sort_by=${orderBy}`;
+            url = `/countries?page=${current_page}&per_page=${items_per_page}&order=${order}&sort_by=${orderBy}`;
         } else {
-            url = `${appUrl}/countries?country_name=${search_param}&country_code=${search_param}&page=${current_page}&per_page=${items_per_page}&order=${order}&sort_by=${orderBy}`;
+            url = `/countries?country_name=${search_param}&country_code=${search_param}&page=${current_page}&per_page=${items_per_page}&order=${order}&sort_by=${orderBy}`;
         }
         fetchData(current_page, items_per_page, orderBy, order);
     }
@@ -243,9 +240,7 @@
                             <td>
                                 <button
                                     class="btn btn-info"
-                                    use:inertia={{
-                                        href: `/countries/${country.id}`,
-                                    }}>Mostrar</button
+                                    on:click={() => router.visit(`/countries/${country.id}`)}>Mostrar</button
                                 >
                             </td>
                         {/if}

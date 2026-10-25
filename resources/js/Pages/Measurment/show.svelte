@@ -2,13 +2,12 @@
     import { onMount } from 'svelte';
     import {blur} from 'svelte/transition';
     import axios from 'axios';
-    import {Inertia} from '@inertiajs/inertia';
-    export let appUrl
+    import { router } from '@inertiajs/svelte';
     export const id = 0;
     export let measurementUnit = {};
     export let audits = [];
     let error = null;
-    let url = `${appUrl}/measurement-units/`;
+    let url = `/measurement-units/`;
 
     
 </script>
@@ -21,9 +20,9 @@
 <div class="breadcrumbs text-md mb-4">
 	<ul>
         <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <li><span class="cursor-pointer" on:click={()=>Inertia.visit("/")}>Inicio</span></li>
+        <li><span class="cursor-pointer" on:click={()=>router.visit("/")}>Inicio</span></li>
         <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <li><span class="cursor-pointer" on:click={()=>Inertia.visit("/measurement-units")}>Unidades de medida</span></li>
+        <li><span class="cursor-pointer" on:click={()=>router.visit("/measurement-units")}>Unidades de medida</span></li>
 	</ul>
 </div>
 {#if measurementUnit}

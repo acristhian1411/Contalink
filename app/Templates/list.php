@@ -11,7 +11,7 @@ function generateListComponent($modelName, $fields) {
     $svelteTemplate = "
 <script>
     import { onMount } from 'svelte';
-    import { inertia } from '@inertiajs/inertia-svelte';
+    import { router } from '@inertiajs/svelte';
     import axios from 'axios';
     import {Pagination, DeleteModal, Modal} from '@components/utilities/';
     import {Alert, ErrorAlert} from '@components/Alerts/';
@@ -19,7 +19,6 @@ function generateListComponent($modelName, $fields) {
     import Form from './Form.svelte';
     
     export let user;
-    export let appUrl;
     let data = [];
     let error = null;
     let openAlert = false;
@@ -37,7 +36,7 @@ function generateListComponent($modelName, $fields) {
     let total_items;
     let current_page = 1;
     let items_per_page = '10';
-    let url = `\${appUrl}/api/{$modelNameLower}s?`;
+    let url = `\/api/{$modelNameLower}s?`;
 
     function updateData() {
         fetchData();
@@ -48,11 +47,10 @@ function generateListComponent($modelName, $fields) {
         let token = '';
         let config = {
             headers: {
-                authorization: `token: \${token}`,
             },
         };
         axios
-            .get(`\${url}sort_by=\${orderBy}&order=\${order}&page=\${page}&per_page=\${rows}`, config)
+            .get(`${url}sort_by=${orderBy}&order=${order}&page=${page}&per_page=${rows}`, config)
             .then((response) => {
                 data = response.data.data;
                 current_page = response.data.currentPage;
@@ -82,10 +80,9 @@ function generateListComponent($modelName, $fields) {
         let token = '';
         let config = {
             headers: {
-                authorization: `token: \${token}`,
             },
         };
-        axios.delete(`\${appUrl}/api/{$modelNameLower}s/\${id}`, config).then((res) => {
+        axios.delete(`\/api/{$modelNameLower}s/${id}`, config).then((res) => {
             let detail = {
                 detail: {
                     type: 'delete',
@@ -142,7 +139,7 @@ function generateListComponent($modelName, $fields) {
 
     function search(event) {
         search_param = event.target.value;
-        url = search_param === '' ? `\${appUrl}/api/{$modelNameLower}s?` : `\${appUrl}/api/{$modelNameLower}s?{$defaultField}=\${search_param}&`;
+        url = search_param === '' ? `\/api/{$modelNameLower}s?` : `\/api/{$modelNameLower}s?{$defaultField}=${search_param}&`;
         fetchData(1, items_per_page);
     }
 
@@ -219,7 +216,7 @@ function generateListComponent($modelName, $fields) {
     // Agregamos botones de edición, eliminación y visualización basados en permisos
     $svelteTemplate .= "
                         {#if user.permissions != undefined && user.permissions.includes('{$modelNameLower}s.show')}
-                            <td><button class=\"btn btn-info\" use:inertia={{ href: `/{$modelNameLower}s/\${item.id}` }}>Mostrar</button></td>
+                            <td><button class=\"btn btn-info\" on:click={() => router.visit(`/{$modelNameLower}s/${item.id}`)}>Mostrar</button></td>
                         {/if}
                         {#if user.permissions != undefined && user.permissions.includes('{$modelNameLower}s.update')}
                             <td><button class=\"btn btn-warning\" on:click={() => openEditModal(item)}>Editar</button></td>

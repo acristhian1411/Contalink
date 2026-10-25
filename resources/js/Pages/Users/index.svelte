@@ -1,26 +1,24 @@
 <script>
-    export let data = [];
+    export let data = { data: [] };
 
-    import Layout from "../../components/Commons/Layout.svelte";
-    import { Inertia } from "@inertiajs/inertia";
+    import { router } from '@inertiajs/svelte';
 
     function viewUser(id) {
-        Inertia.visit(`/users/${id}`);
+        router.visit(`/users/${id}`);
     }
 
     function editUser(id) {
-        Inertia.visit(`/users/${id}/edit`);
+        router.visit(`/users/${id}/edit`);
     }
 
     function deleteUser(id) {
         if (confirm("¿Está seguro de que desea eliminar este usuario?")) {
-            Inertia.delete(`/users/${id}`);
+            router.delete(`/users/${id}`);
         }
     }
 </script>
 
-<Layout>
-    <div class="container mx-auto px-4 py-6">
+<div class="container mx-auto px-4 py-6">
         <div class="bg-white shadow-md rounded-lg">
             <div class="px-6 py-4 border-b border-gray-200">
                 <h1 class="text-2xl font-bold text-gray-900">Usuarios</h1>
@@ -30,7 +28,7 @@
                 <div class="mb-4">
                     <button
                         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                        on:click={() => Inertia.visit("/users/create")}
+                        on:click={() => router.visit("/users/create")}
                     >
                         Nuevo Usuario
                     </button>
@@ -63,7 +61,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            {#each data as user}
+                            {#each data.data as user}
                                 <tr>
                                     <td
                                         class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
@@ -111,7 +109,7 @@
                         </tbody>
                     </table>
 
-                    {#if data.length === 0}
+                    {#if !data.data || data.data.length === 0}
                         <div class="text-center py-8">
                             <p class="text-gray-500">
                                 No hay usuarios registrados.
@@ -122,4 +120,3 @@
             </div>
         </div>
     </div>
-</Layout>

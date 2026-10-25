@@ -1,15 +1,14 @@
 <script>
     import {blur} from 'svelte/transition';
-    import { Inertia } from '@inertiajs/inertia';
-    export let appUrl
+    import { router } from '@inertiajs/svelte';
     export const id = 0;
     export let brand;
     export let audits;
     let error = null;
-    let url = `${appUrl}/api/brands/`;
+    let url = `/brands/`;
 
     function goTo(route){
-        Inertia.visit(route);
+        router.visit(route);
     }
 </script>
 <svelte:head>

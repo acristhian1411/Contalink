@@ -210,7 +210,7 @@ class MeasurementUnitsController extends ApiController
         try {
             $datos = MeasurementUnit::active()->get();
             $from = request()->wantsJson() ? 'api' : 'web';
-            return $this->showAll($datos, $from, 'Measurment/active', 200);
+            return $this->showAll($datos, $from, 'Measurment/index', 200);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => $e->getMessage(),

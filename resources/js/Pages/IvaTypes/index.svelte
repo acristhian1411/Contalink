@@ -2,7 +2,7 @@
 <script>
 	// @ts-nocheck
 	import { onMount } from 'svelte';
-	import { inertia } from '@inertiajs/inertia-svelte';
+	import { router } from '@inertiajs/svelte';
 	// import { isLoggedIn, getToken} from '../../services/authservice'
 	// import {goto} from '$app/navigation';
 	import axios from 'axios';
@@ -12,7 +12,6 @@
 	import Form from './form.svelte';
 	// import { appUrl } from '$env/static/public';
 	export let user
-    export let appUrl
 	export let data = [];
 	let ivatypes = [];
 	let error = null;
@@ -31,7 +30,7 @@
 	let total_items;
 	let current_page = 1;
 	let items_per_page = '10';
-	let url = `${appUrl}/ivatypes?`;
+	let url = `/iva-types?`;
 
 	function updateData() {
 		fetchData();
@@ -64,11 +63,9 @@
 	function deleteRecord() {
 		let token = '';
 		let config = {
-			headers: {
-				authorization: `token: ${token}`,
-			},
+			headers: {},
 		}
-		axios.delete(`${appUrl}/ivatypes/${id}`, config).then((res) => {
+		axios.delete(`/iva-types/${id}`, config).then((res) => {
 			let detail = {
 				detail: {
 					type: 'delete',
@@ -104,7 +101,7 @@
 		} else {
 			order = 'asc';
 		}
-		axios.get('/ivatypes?page='+current_page+'&per_page='+items_per_page+'&order='+order+'&sort_by='+orderBy).then((response) => {
+		axios.get('/iva-types?page='+current_page+'&per_page='+items_per_page+'&order='+order+'&sort_by='+orderBy).then((response) => {
 			ivatypes = response.data.data;
 			current_page = response.data.currentPage;
 			total_items = response.data.per_page;
@@ -124,7 +121,7 @@
 	}
 	function handleRowsPerPage(event) {
 		items_per_page = event.detail.value;
-		axios.get('/ivatypes?page='+current_page+'&per_page='+items_per_page+'&order='+order+'&sort_by='+orderBy).then((response) => {
+		axios.get('/iva-types?page='+current_page+'&per_page='+items_per_page+'&order='+order+'&sort_by='+orderBy).then((response) => {
 			ivatypes = response.data.data;
 			current_page = response.data.currentPage;
 			total_items = response.data.per_page;
@@ -140,7 +137,7 @@
 	}
 	function handlePage(event) {
 		current_page = event.detail.value;
-		axios.get('/ivatypes?page='+current_page+'&per_page='+items_per_page+'&order='+order+'&sort_by='+orderBy).then((response) => {
+		axios.get('/iva-types?page='+current_page+'&per_page='+items_per_page+'&order='+order+'&sort_by='+orderBy).then((response) => {
 			ivatypes = response.data.data;
 			current_page = response.data.currentPage;
 			total_items = response.data.per_page;
@@ -157,9 +154,9 @@
 	function search(event) {
 		search_param = event.target.value;
 		if (search_param == '') {
-			url = `/ivatypes?`;
+			url = `/iva-types?`;
 		} else {
-			url = `/ivatypes?iva_type_desc=${search_param}&iva_type_percent=${search_param}&`;
+			url = `/iva-types?iva_type_desc=${search_param}&iva_type_percent=${search_param}&`;
 		}
 		axios.get(url).then((response) => {
 			ivatypes = response.data.data;
@@ -256,7 +253,7 @@
 						<td class="text-center">{ivatype.iva_type_percent}</td>
 						{#if user.permissions != undefined && user.permissions.includes('ivatypes.show')}
 							<td>
-								<button class="btn btn-info" use:inertia={{ href: `/ivatypes/${ivatype.id}` }}>Mostrar</button>
+								<button class="btn btn-info" on:click={() => router.visit(`/iva-types/${ivatype.id}`)}>Mostrar</button>
 							</td>
 						{/if}
 						{#if user.permissions != undefined && user.permissions.includes('ivatypes.update')}

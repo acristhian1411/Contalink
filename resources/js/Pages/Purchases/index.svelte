@@ -1,15 +1,14 @@
 
 <script>
     import { onMount } from 'svelte';
-    import { inertia } from '@inertiajs/inertia-svelte';
+    import { router } from '@inertiajs/svelte';
     import axios from 'axios';
     import {Pagination, DeleteModal, Modal} from '@components/utilities/';
     import {Alert, ErrorAlert} from '@components/Alerts/';
     import {SearchIcon, SortIcon} from '@components/Icons/';
-    import Form from './Form.svelte';
+    import Form from './form.svelte';
     
     export let user;
-    export let appUrl;
     let data = [];
     let error = null;
     let openAlert = false;
@@ -27,7 +26,7 @@
     let total_items;
     let current_page = 1;
     let items_per_page = '10';
-    let url = `${appUrl}/api/purchases?`;
+    let url = `/api/purchases?`;
 
     function updateData() {
         fetchData();
@@ -37,9 +36,7 @@
     async function fetchData(page = current_page, rows = items_per_page) {
         let token = '';
         let config = {
-            headers: {
-                authorization: `token: ${token}`,
-            },
+            headers: {},
         };
         axios
             .get(`${url}sort_by=${orderBy}&order=${order}&page=${page}&per_page=${rows}`, config)
@@ -71,11 +68,9 @@
     function deleteRecord() {
         let token = '';
         let config = {
-            headers: {
-                authorization: `token: ${token}`,
-            },
+            headers: {},
         };
-        axios.delete(`${appUrl}/api/deletepurchases/${id}`, config).then((res) => {
+        axios.delete(`/api/deletepurchases/${id}`, config).then((res) => {
             let detail = {
                 detail: {
                     type: 'delete',
@@ -132,7 +127,7 @@
 
     function search(event) {
         search_param = event.target.value;
-        url = search_param === '' ? `${appUrl}/api/purchases?` : `${appUrl}/api/purchases?person_id=${search_param}&`;
+        url = search_param === '' ? `/api/purchases?` : `/api/purchases?person_id=${search_param}&`;
         fetchData(1, items_per_page);
     }
 
@@ -216,7 +211,7 @@
                         <td class="text-center">{item.purchase_date}</td>
                         <td class="text-center">{item.purchase_status == true ? 'Procesado' : 'Pendiente'}</td>
                         {#if user.permissions != undefined && user.permissions.includes('purchases.show')}
-                            <td><button class="btn btn-info" use:inertia={{ href: `/purchases/${item.id}` }}>Mostrar</button></td>
+                            <td><button class="btn btn-info" on:click={() => router.visit(`/purchases/${item.id}`)}>Mostrar</button></td>
                         {/if}
                         {#if user.permissions != undefined && user.permissions.includes('purchases.update')}
                             <td><button class="btn btn-warning" on:click={() => openEditModal(item)}>Editar</button></td>

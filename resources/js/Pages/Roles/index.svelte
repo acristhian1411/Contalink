@@ -2,7 +2,7 @@
 <script>
 	// @ts-nocheck
 	import { onMount } from 'svelte';
-	import { inertia } from '@inertiajs/inertia-svelte';
+	import { router } from '@inertiajs/svelte';
 	// import { isLoggedIn, getToken} from '../../services/authservice'
 	// import {goto} from '$app/navigation';
 	// import axios from 'axios';
@@ -12,7 +12,6 @@
 	import Form from './form.svelte';
 	// import { appUrl } from '$env/static/public';
 	export let user
-    export let appUrl
 	export let data = [];
 	let roles = []
 	let error = null;
@@ -31,7 +30,7 @@
 	let total_items;
 	let current_page = 1;
 	let items_per_page = '10';
-	let url = `${appUrl}/api/roles?`;
+	let url = `/api/roles?`;
 
 	function updateData() {
 		fetchData(current_page, items_per_page, orderBy, sort);
@@ -76,11 +75,9 @@
 	function deleteRecord() {
 		let token = '';
 		let config = {
-			headers: {
-				authorization: `token: ${token}`,
-			},
+			headers: {},
 		}
-		axios.delete(`${appUrl}/roles/${id}`, config).then((res) => {
+		axios.delete(`/roles/${id}`, config).then((res) => {
 			let detail = {
 				detail: {
 					type: 'delete',
@@ -133,9 +130,9 @@
 	function search(event) {
 		search_param = event.target.value;
 		if (search_param == '') {
-			url = `${appUrl}/roles?`;
+			url = `/roles?`;
 		} else {
-			url = `${appUrl}/roles?name=${search_param}&guard_name=${search_param}&`;
+			url = `/roles?name=${search_param}&guard_name=${search_param}&`;
 		}
 		fetchData(1, items_per_page);
 	}
@@ -208,7 +205,7 @@
 						<td class="text-center">{role.name}</td>
 						{#if user.permissions != undefined && user.permissions.includes('roles.show')}
 							<td>
-								<button class="btn btn-info" use:inertia={{ href: `/roles/${role.id}` }}>Mostrar</button>
+								<button class="btn btn-info" on:click={() => router.visit(`/roles/${role.id}`)}>Mostrar</button>
 							</td>
 						{/if}
 						{#if user.permissions != undefined && user.permissions.includes('roles.update')}

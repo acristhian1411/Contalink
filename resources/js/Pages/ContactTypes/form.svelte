@@ -12,9 +12,7 @@
     let id = 0;
     let errors = null;
     let config = {
-        headers: {
-            authorization: `token: ${token}`,
-        },
+        headers: {},
     };
     
     // Variables dinámicas para cada campo
@@ -38,7 +36,7 @@
 
     async function handleCreateObject() {
         try {
-            const res = await axios.post(`/contacttypes`, { cont_type_desc }, config);
+            const res = await axios.post(`/contact-types`, { cont_type_desc }, config);
 
             let detail = {
                 detail: {
@@ -62,7 +60,7 @@
 
     async function handleUpdateObject() {
         try {
-            const res = await axios.put(`/contacttypes/${id}`, { cont_type_desc }, config);
+            const res = await axios.put(`/contact-types/${id}`, { cont_type_desc }, config);
 
             let detail = {
                 detail: {

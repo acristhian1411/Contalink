@@ -1,6 +1,6 @@
 <script>
     import { Alert } from '@/components/Alerts';
-    import { Inertia } from '@inertiajs/inertia';
+    import { router } from '@inertiajs/svelte';
     let email = '';
     let password = '';
     let remember = false;
@@ -28,7 +28,7 @@
         if (response.data.success) {
           OpenAlertMessage({detail: {type: 'success', message: 'Inicio de sesión exitoso'}});
           setTimeout(() => {
-            Inertia.visit('/');
+            router.visit('/');
           }, 500);
         }
       } catch (error) {

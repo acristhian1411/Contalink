@@ -2,7 +2,7 @@
     import { onMount } from 'svelte';
     import {blur} from 'svelte/transition';
     import axios from 'axios';
-    import { Inertia } from '@inertiajs/inertia';
+    import { router } from '@inertiajs/svelte';
 
     import {Tabs,Modal} from '@components/utilities';
     import {formatNumber, unformatNumber} from '@components/utilities/NumberFormat.js';
@@ -15,7 +15,6 @@
     import { Alert } from '@components/Alerts';
 
 	export let user
-    export let appUrl
     export let id = 0;
     let till = {};
     let tabs = [
@@ -28,7 +27,7 @@
     let audits = [];
     let till_amount
     let error = null;
-    let url = `${appUrl}/api/tills/`;
+    let url = `/api/tills/`;
     let active = 'Acciones';
     let tillActions = false;
     let acctionType = 'open';
@@ -41,7 +40,7 @@
     }
 
     async function getTillAmount(tillId) {
-        axios.get(`${appUrl}/api/tills/${tillId}/amount`).then((response) => {
+        axios.get(`/api/tills/${tillId}/amount`).then((response) => {
             till_amount = response.data.till_amount;
         }).catch((err) => {
             error = err.request.response;
@@ -81,7 +80,7 @@
     }
 
     function goTo(route){
-        Inertia.visit(route);
+        router.visit(route);
     }
     onMount(async () => {
         fetchData();

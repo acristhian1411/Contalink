@@ -2,18 +2,17 @@
     import { onMount } from 'svelte';
     import {blur} from 'svelte/transition';
     import axios from 'axios';
-    import { Inertia } from '@inertiajs/inertia';
+    import { router } from '@inertiajs/svelte';
     import AsingRole from './asingRole.svelte';
     export let user;
-    export let appUrl
     export let id = 0;
     export let users;
     export let audits;
     let error = null;
-    let url = `${appUrl}/api/users/`;
+    let url = `/api/users/`;
 
     function goTo(route){
-        Inertia.visit(route);
+        router.visit(route);
     }
 </script>
 {#if error}

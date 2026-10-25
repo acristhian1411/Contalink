@@ -2,14 +2,13 @@
 <script>
 	// @ts-nocheck
 	import { onMount } from 'svelte';
-	import { inertia } from '@inertiajs/inertia-svelte';
+	import { router } from '@inertiajs/svelte';
 	import axios from 'axios';
 	import {Pagination, DeleteModal, Modal} from '@components/utilities/';
 	import {Alert, ErrorAlert} from '@components/Alerts/';
 	import {SearchIcon, SortIcon} from '@components/Icons/';
 	import Form from './form.svelte';
 	export let user;
-    export let appUrl
 	export let data;
 	let persontypes	= [];
 	let error = null;
@@ -28,7 +27,7 @@
 	let total_items;
 	let current_page = 1;
 	let items_per_page = '10';
-	let url = `/persontypes`;
+	let url = `/person-types`;
 
 	function updateData() {
 		fetchData(current_page, items_per_page, orderBy, order);
@@ -71,7 +70,7 @@
 	}
 
 	function deleteRecord() {
-		axios.delete(`/persontypes/${id}`).then((res) => {
+		axios.delete(`/person-types/${id}`).then((res) => {
 			let detail = {
 				detail: {
 					type: 'delete',
@@ -125,9 +124,9 @@
 	function search(event) {
 		search_param = event.target.value;
 		if (search_param == '') {
-			url = `${appUrl}/api/persontypes?`;
+			url = `/api/person-types?`;
 		} else {
-			url = `${appUrl}/api/persontypes?p_type_desc=${search_param}&`;
+			url = `/api/person-types?p_type_desc=${search_param}&`;
 		}
 		fetchData(1, items_per_page, orderBy, order);
 	}
@@ -206,7 +205,7 @@
 						<td class="text-center">{person_type.p_type_desc}</td>
 						{#if user.permissions != undefined && user.permissions.includes('persontypes.show')}
 							<td>
-								<button class="btn btn-info" use:inertia={{ href: `/persontypes/${person_type.id}` }}>Mostrar</button>
+								<button class="btn btn-info" on:click={() => router.visit(`/person-types/${person_type.id}`)}>Mostrar</button>
 							</td>
 						{/if}
 						{#if user.permissions != undefined && user.permissions.includes('persontypes.update')}

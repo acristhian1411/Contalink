@@ -40,9 +40,7 @@
     let id = 0;
     let errors = null;
     let config = {
-        headers: {
-            authorization: `token: ${token}`,
-        },
+        headers: {},
     };
     let showClientForm
     let modal = false;
@@ -95,7 +93,7 @@
      * @returns {void}
      */
     function getPaymentTypes() {
-        axios.get(`/api/paymenttypes`).then((response) => {
+        axios.get(`/api/payment-types`).then((response) => {
             paymentTypes = response.data.data;
         }).catch((err) => {
             let detail = {

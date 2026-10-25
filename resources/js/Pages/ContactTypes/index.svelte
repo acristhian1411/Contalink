@@ -1,15 +1,14 @@
 
 <script>
     import { onMount } from 'svelte';
-    import { inertia } from '@inertiajs/inertia-svelte';
+    import { router } from '@inertiajs/svelte';
     import axios from 'axios';
     import {Pagination, DeleteModal, Modal} from '@components/utilities/';
     import {Alert, ErrorAlert} from '@components/Alerts/';
     import {SearchIcon, SortIcon} from '@components/Icons/';
-    import Form from './Form.svelte';
+    import Form from './form.svelte';
     
     export let user;
-    export let appUrl;
     export let data;
     let contacttypes = [];
     let error = null;
@@ -28,7 +27,7 @@
     let total_items;
     let current_page = 1;
     let items_per_page = '10';
-    let url = `${appUrl}/contacttypes?`;
+    let url = `/contact-types?`;
 
     function updateData() {
         fetchData(current_page, items_per_page, orderBy, order);
@@ -67,11 +66,9 @@
     function deleteRecord() {
         let token = '';
         let config = {
-            headers: {
-                authorization: `token: ${token}`,
-            },
+            headers: {},
         };
-        axios.delete(`${appUrl}/contacttypes/${id}`, config).then((res) => {
+        axios.delete(`/contact-types/${id}`, config).then((res) => {
             let detail = {
                 detail: {
                     type: 'delete',
@@ -128,7 +125,7 @@
 
     function search(event) {
         search_param = event.target.value;
-        url = search_param === '' ? `/contacttypes?` : `/contacttypes?cont_type_desc=${search_param}&`;
+        url = search_param === '' ? `/contact-types?` : `/contact-types?cont_type_desc=${search_param}&`;
         fetchData(1, items_per_page, orderBy, order);
     }
 
@@ -192,7 +189,7 @@
                         <td>{i+1}</td>
                         <td class="text-center">{contacttype.cont_type_desc}</td>
                         {#if user.permissions != undefined && user.permissions.includes('contacttypes.show')}
-                            <td><button class="btn btn-info" use:inertia={{ href: `/contacttypes/${contacttype.id}` }}>Mostrar</button></td>
+                            <td><button class="btn btn-info" on:click={() => router.visit(`/contact-types/${contacttype.id}`)}>Mostrar</button></td>
                         {/if}
                         {#if user.permissions != undefined && user.permissions.includes('contacttypes.update')}
                             <td><button class="btn btn-warning" on:click={() => openEditModal(contacttype)}>Editar</button></td>

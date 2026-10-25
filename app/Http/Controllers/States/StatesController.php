@@ -47,7 +47,7 @@ class StatesController extends ApiController
                     ->get();
                 $from = 'api';
                 // dd($from);
-                return $this->showAll($datos, $from, 'State/index', 200);
+                return $this->showAll($datos, $from, 'States/index', 200);
             }
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('state_name', 'LIKE', "%{$searchTerm}%")
@@ -57,7 +57,7 @@ class StatesController extends ApiController
                 ->get();
             $from = 'api';
             // dd($from);
-            return $this->showAll($datos, $from, 'State/index', 200);
+            return $this->showAll($datos, $from, 'States/index', 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'mesage' => 'No se pudo obtener los datos']);
         }

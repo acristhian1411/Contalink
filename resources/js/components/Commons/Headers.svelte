@@ -3,10 +3,9 @@
 	import axios from 'axios';
 	import { onMount } from 'svelte';
 	import { sidebarOpen } from './sidebar.js';
-	import {Link} from '@inertiajs/inertia-svelte';
+	import { Link } from '@inertiajs/svelte';
 	const company_name = import.meta.env.VITE_COMPANY_NAME;
 
-	export let appUrl
 	export let user;
 	let token;
 	let config;
@@ -19,7 +18,7 @@
 
 	function getPerson() {
 		axios
-			.get(`${appUrl}/api/persons/${user.person_id}`,config)
+			.get(`/api/persons/${user.person_id}`,config)
 			.then((res) => {
 				person = res.data;
 				person_photo = '/images/'+person.person_photo;
@@ -33,9 +32,7 @@
 		token = '';
 		user = [];
 		config = {
-			headers: {
-				'authorization': `token: ${token}`
-			}
+			headers: {}
 		};
 		// getPerson();
 	});

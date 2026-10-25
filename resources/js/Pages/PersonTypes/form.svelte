@@ -15,9 +15,7 @@
 	let errors = null;
 	let token = '';
 	let config = {
-		headers: {
-			authorization: `token: ${token}`,
-		},
+		headers: {},
 	}
 	function close() {
 		dispatch('close');
@@ -33,11 +31,11 @@
 			p_type_desc = item.p_type_desc;
 		}
 	});
-	// http://127.0.0.1:5173/tilltypes
+	// http://127.0.0.1:5173/till-types
 	function handleCreateObject() {
 		
 		axios
-			.post(`/persontypes`, {
+			.post(`/person-types`, {
 				p_type_desc
 			},config)
 			.then((res) => {
@@ -62,7 +60,7 @@
 	}
 	function handleUpdateObject() {
 		axios
-			.put(`/persontypes/${id}`, {
+			.put(`/person-types/${id}`, {
 				p_type_desc
 			},config)
 			.then((res) => {

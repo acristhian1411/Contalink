@@ -18,9 +18,7 @@
 
 	let token = '';
 	let config = {
-		headers: {
-			authorization: `token: ${token}`,
-		},
+		headers: {},
 	}
 	function close() {
 		dispatch('close');
@@ -38,7 +36,7 @@
 			unit_abbreviation = item.unit_abbreviation;
 		}
 	});
-	// http://127.0.0.1:5173/tilltypes
+	// http://127.0.0.1:5173/till-types
 	function handleCreateObject() {
 		axios.post('/measurement-units',{
 			unit_name: unit_name,

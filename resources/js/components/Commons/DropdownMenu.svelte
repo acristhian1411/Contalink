@@ -1,13 +1,13 @@
 <script>
-    import {Inertia} from '@inertiajs/inertia';
-    import { Link } from '@inertiajs/inertia-svelte';
+    import { router } from '@inertiajs/svelte';
+    import { Link } from '@inertiajs/svelte';
     export let title = '';
     // export let icon;
     export let items ;
     // Función para la navegación
     function goTo(path) {
       // Aquí puedes implementar la lógica de navegación, como router o redirección.
-		Inertia.visit(path);
+		router.visit(path);
     }
 </script>
 

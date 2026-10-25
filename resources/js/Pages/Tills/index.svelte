@@ -2,7 +2,7 @@
 <script>
 	// @ts-nocheck
 	import { onMount } from 'svelte';
-	import { inertia } from '@inertiajs/inertia-svelte';
+	import { router } from '@inertiajs/svelte';
 	// import { isLoggedIn, getToken} from '../../services/authservice'
 	// import {goto} from '$app/navigation';
 	import axios from 'axios';
@@ -11,7 +11,6 @@
 	import {SearchIcon, SortIcon} from '@components/Icons/';
 	import Form from './form.svelte';
 	// import { appUrl } from '$env/static/public';
-    export let appUrl
 	let data = [];
 	let error = null;
 	let openAlert = false;
@@ -29,7 +28,7 @@
 	let total_items;
 	let current_page = 1;
 	let items_per_page = '10';
-	let url = `${appUrl}/api/tills?`;
+	let url = `/api/tills?`;
 	function updateData() {
 		fetchData();
 		closeModal();
@@ -38,9 +37,7 @@
 	async function fetchData(page = current_page, rows = items_per_page) {
 		let token = '';
 		let config = {
-			headers: {
-				authorization: `token: ${token}`,
-			},
+			headers: {},
 		}
 		axios
 			// .get('/api/tills')
@@ -73,11 +70,9 @@
 	function deleteRecord() {
 		let token = '';
 		let config = {
-			headers: {
-				authorization: `token: ${token}`,
-			},
+			headers: {},
 		}
-		axios.delete(`${appUrl}/api/tills/${id}`, config).then((res) => {
+		axios.delete(`/api/tills/${id}`, config).then((res) => {
 			let detail = {
 				detail: {
 					type: 'delete',
@@ -130,9 +125,9 @@
 	function search(event) {
 		search_param = event.target.value;
 		if (search_param == '') {
-			url = `${appUrl}/api/tills?`;
+			url = `/api/tills?`;
 		} else {
-			url = `${appUrl}/api/tills?till_name=${search_param}&`;
+			url = `/api/tills?till_name=${search_param}&`;
 		}
 		fetchData(1, items_per_page);
 	}
@@ -215,7 +210,7 @@
 						<td class="text-center">{till.till_type_desc}</td>
 						<td class="text-center">{ till.till_status != null && till.till_status == true ? 'Abierto' : 'Cerrado'}</td>
 						<td>
-							<button class="btn btn-info" use:inertia={{ href: `/tills/${till.id}` }}>Mostrar</button>
+							<button class="btn btn-info" on:click={() => router.visit(`/tills/${till.id}`)}>Mostrar</button>
 						</td>
 						<td>
 							<button class="btn btn-warning" on:click={() => openEditModal(till)}>Editar</button>

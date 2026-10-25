@@ -2,14 +2,13 @@
 <script>
 	// @ts-nocheck
 	import { onMount } from 'svelte';
-	import { inertia} from '@inertiajs/inertia-svelte';
+	import { router } from '@inertiajs/svelte';
 	import axios from 'axios';
 	import {Pagination, DeleteModal, Modal} from '@components/utilities/';
 	import {Alert, ErrorAlert} from '@components/Alerts/';
 	import {SearchIcon, SortIcon} from '@components/Icons/';
 	import Form from './form.svelte';
 	export let user
-    export let appUrl
 	export let data;
 	let measurments = [];
 	let error = null;
@@ -72,9 +71,7 @@
 	function deleteRecord() {
 		let token = '';
 		let config = {
-			headers: {
-				authorization: `token: ${token}`,
-			},
+			headers: {},
 		}
 		axios.delete(`/measurement-units/${id}`).then((res) => {
 			let detail = {
@@ -129,9 +126,9 @@
 	function search(event) {
 		search_param = event.target.value;
 		if (search_param == '') {
-			url = `${appUrl}/measurement-units?page=${current_page}&per_page=${items_per_page}&order=${order}&sort_by=${orderBy}`;
+			url = `/measurement-units?page=${current_page}&per_page=${items_per_page}&order=${order}&sort_by=${orderBy}`;
 		} else {
-			url = `${appUrl}/measurement-units?unit_name=${search_param}&unit_abbreviation=${search_param}&page=${current_page}&per_page=${items_per_page}&order=${order}&sort_by=${orderBy}`;
+			url = `/measurement-units?unit_name=${search_param}&unit_abbreviation=${search_param}&page=${current_page}&per_page=${items_per_page}&order=${order}&sort_by=${orderBy}`;
 		}
 		fetchData(current_page, items_per_page, orderBy, order);
 	}
@@ -213,7 +210,7 @@
 						<td class="text-center">{measurment.unit_abbreviation}</td>
 						{#if user.permissions != undefined && user.permissions.includes('measurement_units.show')}
 							<td>
-								<button class="btn btn-info" use:inertia={{ href: `/measurement-units/${measurment.id}` }}>Mostrar</button>
+								<button class="btn btn-info" on:click={() => router.visit(`/measurement-units/${measurment.id}`)}>Mostrar</button>
 							</td>
 						{/if}
 						{#if user.permissions != undefined && user.permissions.includes('measurement_units.update')}

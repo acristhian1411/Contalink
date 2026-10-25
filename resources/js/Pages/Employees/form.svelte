@@ -36,9 +36,7 @@
 	let step = 0;
 	let token = '';
 	let config = {
-		headers: {
-			authorization: `token: ${token}`,
-		},
+		headers: {},
 	}
 	function close() {
 		dispatch('close');
@@ -120,7 +118,7 @@
 			city_selected = {label: item.city_name, value: item.city_id};
 		}
 	});
-	// http://127.0.0.1:5173/tilltypes
+	// http://127.0.0.1:5173/till-types
 	function handleCreateObject(event) {
 		event.preventDefault();
 		axios

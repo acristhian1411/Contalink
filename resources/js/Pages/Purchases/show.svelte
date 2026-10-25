@@ -3,18 +3,30 @@
     import { onMount } from 'svelte';
     import axios from 'axios';
     import { blur } from 'svelte/transition';
-    import { Inertia } from '@inertiajs/inertia';
+    import { router } from '@inertiajs/svelte';
 
-    export let appUrl;
-    export const id = 0;
+    export let id = 0;
     
-    export let contacttype;
-    export let audits;
+    let item = {};
+    let audits = [];
     let error = null;
-    let url = `${appUrl}/api/contacttypes/`;
+    let url = `/api/purchases/`;
+
+    async function fetchData() {
+        axios.get(`${url}${id}`).then((response) => {
+            item = response.data.data;
+            audits = response.data.audits;
+        }).catch((err) => {
+            error = err.request.response;
+        });
+    }
+
+    onMount(async () => {
+        fetchData();
+    });
 
     function goTo(route){
-        Inertia.visit(route);
+        router.visit(route);
     }
 </script>
 
@@ -22,22 +34,19 @@
     <p>{error}</p>
 {/if}
 
-<svelte:head>
-    <title>{contacttype?.cont_type_desc}</title>
-</svelte:head>
 <div class="breadcrumbs text-md mb-4">
     <ul>
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <li><span class="cursor-pointer" on:click={() => goTo('/')}>Inicio</span></li>
         <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <li><span class="cursor-pointer" on:click={() => goTo('/contacttypes')}>Tipos de Contactos</span></li>
+        <li><span class="cursor-pointer" on:click={() => goTo('/purchases')}>Tipos de Purchases</span></li>
     </ul>
 </div>
 
-{#if contacttype}
+{#if item}
     <div transition:blur>
         <h1 class="text-xl font-bold">Descripción:</h1>
-        <p class="text-1xl">{contacttype.cont_type_desc}</p>
+        <p class="text-1xl">{item.person_id}</p>
     </div>
 {/if}
 

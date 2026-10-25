@@ -2,14 +2,13 @@
 <script>
 	// @ts-nocheck
 	import { onMount } from 'svelte';
-	import { inertia } from '@inertiajs/inertia-svelte';
+	import { router } from '@inertiajs/svelte';
 	import axios from 'axios';
 	import {Pagination, DeleteModal, Modal} from '@components/utilities/';
 	import {Alert, ErrorAlert} from '@components/Alerts/';
 	import {SearchIcon, SortIcon} from '@components/Icons/';
 	import Form from './form.svelte';
 	export let user
-    export let appUrl
 	export let data = [];
 	let tilltypes = [];
 	let error = null;
@@ -28,7 +27,7 @@
 	let total_items;
 	let current_page = 1;
 	let items_per_page = '10';
-	let url = `${appUrl}/till-types?`;
+	let url = `/till-types?`;
 	function updateData() {
 		fetchData(current_page, items_per_page,orderBy,order );
 		closeModal();
@@ -80,11 +79,9 @@
 	function deleteRecord() {
 		let token = '';
 		let config = {
-			headers: {
-				authorization: `token: ${token}`,
-			},
+			headers: {},
 		}
-		axios.delete(`${appUrl}/till-types/${id}`, config).then((res) => {
+		axios.delete(`/till-types/${id}`, config).then((res) => {
 			let detail = {
 				detail: {
 					type: 'delete',
@@ -250,7 +247,7 @@
 						<td class="text-center">{tilltype.till_type_desc}</td>
 						{#if user.permissions != undefined && user.permissions.includes('tilltypes.show')}
 							<td>
-								<button class="btn btn-info" use:inertia={{ href: `/till-types/${tilltype.id}` }}>
+								<button class="btn btn-info" on:click={() => router.visit(`/till-types/${tilltype.id}`)}>
 									Mostrar
 								</button>
 							</td>

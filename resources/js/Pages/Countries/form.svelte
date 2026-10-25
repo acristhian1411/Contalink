@@ -17,9 +17,7 @@
 
 	let token = '';
 	let config = {
-		headers: {
-			authorization: `token: ${token}`,
-		},
+		headers: {},
 	}
 	function close() {
 		dispatch('close');
@@ -37,7 +35,7 @@
 			country_code = item.country_code;
 		}
 	});
-	// http://127.0.0.1:5173/tilltypes
+	// http://127.0.0.1:5173/till-types
 	function handleCreateObject() {
 		axios.post('/countries',{
 			country_name: country_name,

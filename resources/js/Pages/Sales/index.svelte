@@ -1,6 +1,6 @@
 <script>
     import { onMount } from "svelte";
-    import { inertia } from "@inertiajs/inertia-svelte";
+    import { router } from '@inertiajs/svelte';
     import axios from "axios";
     import { Pagination, DeleteModal, Modal } from "@components/utilities/";
     import { Alert, ErrorAlert } from "@components/Alerts/";
@@ -8,7 +8,6 @@
     import Form from "./form.svelte";
 
     export let user;
-    export let appUrl;
     let data = [];
     let error = null;
     let openAlert = false;
@@ -26,7 +25,7 @@
     let total_items;
     let current_page = 1;
     let items_per_page = "10";
-    let url = `${appUrl}/api/sales?`;
+    let url = `/api/sales?`;
 
     function updateData() {
         fetchData();
@@ -36,9 +35,7 @@
     async function fetchData(page = current_page, rows = items_per_page) {
         let token = "";
         let config = {
-            headers: {
-                authorization: `token: ${token}`,
-            },
+            headers: {},
         };
         axios
             .get(
@@ -73,11 +70,9 @@
     function deleteRecord() {
         let token = "";
         let config = {
-            headers: {
-                authorization: `token: ${token}`,
-            },
+            headers: {},
         };
-        axios.delete(`${appUrl}/api/deletesale/${id}`, config).then((res) => {
+        axios.delete(`/api/deletesale/${id}`, config).then((res) => {
             let detail = {
                 detail: {
                     type: "delete",
@@ -136,8 +131,8 @@
         search_param = event.target.value;
         url =
             search_param === ""
-                ? `${appUrl}/api/sales?`
-                : `${appUrl}/api/sales?person_id=${search_param}&`;
+                ? `/api/sales?`
+                : `/api/sales?person_id=${search_param}&`;
         fetchData(1, items_per_page);
     }
 
@@ -249,7 +244,7 @@
                             <td
                                 ><button
                                     class="btn btn-info"
-                                    use:inertia={{ href: `/sales/${item.id}` }}
+                                    on:click={() => router.visit(`/sales/${item.id}`)}
                                     >Mostrar</button
                                 ></td
                             >

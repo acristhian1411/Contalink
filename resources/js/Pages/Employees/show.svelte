@@ -2,14 +2,13 @@
     import { onMount } from 'svelte';
     import {blur} from 'svelte/transition';
     import axios from 'axios';
-    import { Inertia } from '@inertiajs/inertia';
+    import { router } from '@inertiajs/svelte';
     export let user;
-    export let appUrl
     export let id = 0;
     let data = [];
     let audits = [];
     let error = null;
-    let url = `${appUrl}/api/persons/`;
+    let url = `/api/persons/`;
 
     async function fetchData() {
         axios.get(`${url}${id}`).then((response) => {
@@ -25,7 +24,7 @@
         fetchData();
     });
     function goTo(route){
-        Inertia.visit(route);
+        router.visit(route);
     }
 </script>
 {#if error}

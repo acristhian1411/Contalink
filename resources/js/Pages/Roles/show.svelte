@@ -2,14 +2,13 @@
     import { onMount } from 'svelte';
     import {blur} from 'svelte/transition';
     import Permissions from './permissions.svelte';
-    import { Inertia } from '@inertiajs/inertia';
+    import { router } from '@inertiajs/svelte';
     // import axios from 'axios';
-    export let appUrl
     export let id = 0;
     export let role ;
     export let audits = [];
     let error = null;
-    let url = `${appUrl}/api/roles/`;
+    let url = `/api/roles/`;
 
     async function fetchData() {
 
@@ -31,7 +30,7 @@
         // fetchData();
     });
     function goTo(route){
-        Inertia.visit(route);
+        router.visit(route);
     }
 </script>
 {#if error}

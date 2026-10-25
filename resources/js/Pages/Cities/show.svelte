@@ -2,13 +2,12 @@
     import { onMount } from 'svelte';
     import {blur} from 'svelte/transition';
     import axios from 'axios';
-    import { Inertia } from '@inertiajs/inertia';
-    export let appUrl
+    import { router } from '@inertiajs/svelte';
     export const id = 0;
     export let city = {};
     export let audits = [];
     let error = null;
-    let url = `${appUrl}/cities/`;
+    let url = `/cities/`;
 
     // async function fetchData() {
     //     axios.get(`${url}${id}`).then((response) => {
@@ -23,7 +22,7 @@
         // fetchData();
     });
     function goTo(route){
-        Inertia.visit(route);
+        router.visit(route);
     }
 </script>
 {#if error}

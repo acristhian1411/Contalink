@@ -1,7 +1,7 @@
 <script>
     // @ts-nocheck
     import { onMount } from "svelte";
-    import { inertia } from "@inertiajs/inertia-svelte";
+    import { router } from '@inertiajs/svelte';
     // import { isLoggedIn, getToken} from '../../services/authservice'
     // import {goto} from '$app/navigation';
     import axios from "axios";
@@ -11,7 +11,6 @@
     import Form from "./form.svelte";
     // import { appUrl } from '$env/static/public';
     export let user;
-    export let appUrl;
     export let data;
     let states = [];
     let error = null;
@@ -30,7 +29,7 @@
     let total_items;
     let current_page = 1;
     let items_per_page = "10";
-    let url = `${appUrl}/states?`;
+    let url = `/states?`;
 
     function updateData() {
         fetchData();
@@ -60,7 +59,7 @@
 
     function deleteRecord() {
         axios
-            .delete(`${appUrl}/states/${id}`, { withCredentials: true })
+            .delete(`/states/${id}`, { withCredentials: true })
             .then((res) => {
                 let detail = {
                     detail: {
@@ -186,9 +185,9 @@
     function search(event) {
         search_param = event.target.value;
         if (search_param == "") {
-            url = `${appUrl}/states?`;
+            url = `/states?`;
         } else {
-            url = `${appUrl}/states?state_name=${search_param}&`;
+            url = `/states?state_name=${search_param}&`;
         }
         axios
             .get(url)
@@ -305,9 +304,7 @@
                             <td>
                                 <button
                                     class="btn btn-info"
-                                    use:inertia={{
-                                        href: `/states/${state.id}`,
-                                    }}>Mostrar</button
+                                    on:click={() => router.visit(`/states/${state.id}`)}>Mostrar</button
                                 >
                             </td>
                         {/if}

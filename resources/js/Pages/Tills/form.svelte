@@ -21,9 +21,7 @@
 	let loading = false;
 	let token = '';
 	let config = {
-		headers: {
-			authorization: `token: ${token}`,
-		},
+		headers: {},
 	}
 	function close() {
 		dispatch('close');
@@ -32,7 +30,7 @@
 
 
 	function getTillTypes() {
-		axios.get(`/api/tilltypes`).then((response) => {
+		axios.get(`/api/till-types`).then((response) => {
 			till_types = response.data.data;
 			if (edit == true) {
 				till_type_selected = till_types.find(till_type => till_type.id === item.till_type_id);
@@ -72,7 +70,7 @@
 
 		}
 	});
-	// http://127.0.0.1:5173/tilltypes
+	// http://127.0.0.1:5173/till-types
 	function handleCreateObject() {
 		axios
 			.post(`/api/tills`, {

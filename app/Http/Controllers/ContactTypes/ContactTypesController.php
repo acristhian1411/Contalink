@@ -21,7 +21,7 @@ class ContactTypesController extends ApiController
             $query = $this->filterData($query, $t);
             $datos = $query->get();
             $from = request()->wantsJson() ? 'api' : 'web';
-            return $this->showAll($datos,$from, 'ContactTypes/List',200);
+            return $this->showAll($datos,$from, 'ContactTypes/index',200);
         }catch(\Exception $e){
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo obtener los datos']);
         }
@@ -69,7 +69,7 @@ class ContactTypesController extends ApiController
             if(request()->wantsJson()){
                 return $this->showOne($ContactType,$audits,200);
             }
-            return Inertia::render('ContactTypes/Show', ['contacttype' => $ContactType,'audits'=>$audits]);
+            return Inertia::render('ContactTypes/show', ['contacttype' => $ContactType,'audits'=>$audits]);
         }catch(\Exception $e){
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo obtener los datos']);
         }

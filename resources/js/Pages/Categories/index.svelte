@@ -2,7 +2,7 @@
 <script>
 	// @ts-nocheck
 	import { onMount } from 'svelte';
-	import { inertia } from '@inertiajs/inertia-svelte';
+	import { router } from '@inertiajs/svelte';
 	// import { isLoggedIn, getToken} from '../../services/authservice'
 	// import {goto} from '$app/navigation';
 	import axios from 'axios';
@@ -12,7 +12,6 @@
 	import Form from './form.svelte';
 	// import { appUrl } from '$env/static/public';
 	export let user
-    export let appUrl
 	export let data;
 	let categories = [];
 	let error = null;
@@ -31,7 +30,7 @@
 	let total_items;
 	let current_page = 1;
 	let items_per_page = '10';
-	let url = `${appUrl}/categories?`;
+	let url = `/categories?`;
 
 	function updateData() {
 		fetchData(current_page, items_per_page,orderBy,order);
@@ -68,7 +67,7 @@
 	}
 
 	function deleteRecord() {
-		axios.delete(`${appUrl}/categories/${id}`).then((res) => {
+		axios.delete(`/categories/${id}`).then((res) => {
 			let detail = {
 				detail: {
 					type: 'delete',
@@ -121,9 +120,9 @@
 	function search(event) {
 		search_param = event.target.value;
 		if (search_param == '') {
-			url = `${appUrl}/categories?`;
+			url = `/categories?`;
 		} else {
-			url = `${appUrl}/categories?cat_desc=${search_param}&`;
+			url = `/categories?cat_desc=${search_param}&`;
 		}
 		fetchData(1, items_per_page,orderBy,order);
 	}
@@ -198,7 +197,7 @@
 						<td class="text-center">{category.cat_desc}</td>
 						{#if user.permissions != undefined && user.permissions.includes('categories.show')}
 							<td>
-								<button class="btn btn-info" use:inertia={{ href: `/categories/${category.id}` }}>Mostrar</button>
+								<button class="btn btn-info" on:click={() => router.visit(`/categories/${category.id}`)}>Mostrar</button>
 							</td>
 						{/if}
 						{#if user.permissions != undefined && user.permissions.includes('categories.update')}
