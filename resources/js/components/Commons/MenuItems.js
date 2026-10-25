@@ -3,19 +3,19 @@ import { BoxesIcon } from '@components/Icons/';
 export const personsItems =(user)=> [
     {
         label: 'Proveedores',
-        route: '/providers',
+        route: '/persons/providers',
         icon: BoxesIcon,
         permission: user != undefined && user.permissions != undefined && user.permissions.includes('persons.index')
     },
     {
         label: 'Empleados',
-        route: '/employees',
+        route: '/persons/employees',
         icon: BoxesIcon,
         permission: user != undefined && user.permissions != undefined && user.permissions.includes('employees.index')
     },
     {
         label: 'Clientes',
-        route: '/clients',
+        route: '/persons/clients',
         icon: BoxesIcon,
         permission: user != undefined && user.permissions != undefined && user.permissions.includes('clients.index')
     }
@@ -68,7 +68,7 @@ export const configItems =(user)=> [
     },
     {
         label: 'Tipos de contacto',
-        route: '/contacttypes',
+        route: '/contact-types',
         icon: BoxesIcon,
         permission: user != undefined && user.permissions != undefined && user.permissions.includes('contacttypes.index')
     },
