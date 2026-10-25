@@ -14,7 +14,7 @@ class RemovePurchaseIdFromPurchasesTable extends Migration
     public function up()
     {
         Schema::table('purchases', function (Blueprint $table) {
-            // add code to drop purchase_id
+            $table->dropForeign(['purchase_id']);
             $table->dropColumn('purchase_id');
         });
     }
