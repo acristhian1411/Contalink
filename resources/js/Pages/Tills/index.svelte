@@ -8,6 +8,7 @@
 	export let items;
 	export let filters = {};
 	export let tillTypes = [];
+	export let user;
 
 	let openAlert = false;
 	let _new = false;
@@ -98,7 +99,7 @@
 </script>
 
 <h3 class="mb-4 text-center text-2xl">Cajas</h3>
-<div class="flex justify-center">
+<div class="flex justify-center gap-4">
 	<label class="input input-bordered flex items-center gap-2">
 		<input
 			type="text"
@@ -109,6 +110,9 @@
 		/>
 		<SearchIcon />
 	</label>
+	{#if user?.permissions?.includes('tills.create')}
+		<button class="btn btn-primary" on:click={() => (_new = true)}>Agregar</button>
+	{/if}
 </div>
 {#if openAlert}
 	<Alert {alertMessage} {alertType} on:close={closeAlert} />
@@ -161,7 +165,6 @@
 							<button on:click={() => sortData('till_status')}><SortIcon /></button>
 						</div>
 					</th>
-					<th><button class="btn btn-primary" on:click={() => (_new = true)}>Agregar</button></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -171,15 +174,21 @@
 						<td class="text-center">{till.till_name}</td>
 						<td class="text-center">{till.till_type_desc}</td>
 						<td class="text-center">{till.till_status == true ? 'Abierto' : 'Cerrado'}</td>
-						<td>
-							<button class="btn btn-info" on:click={() => router.visit(`/tills/${till.id}`)}>Mostrar</button>
-						</td>
-						<td>
-							<button class="btn btn-warning" on:click={() => openEditModal(till)}>Editar</button>
-						</td>
-						<td>
-							<button class="btn btn-secondary" on:click={() => OpenDeleteModal(till.id)}>Eliminar</button>
-						</td>
+						{#if user?.permissions?.includes('tills.show')}
+							<td>
+								<button class="btn btn-info" on:click={() => router.visit(`/tills/${till.id}`)}>Mostrar</button>
+							</td>
+						{/if}
+						{#if user?.permissions?.includes('tills.update')}
+							<td>
+								<button class="btn btn-warning" on:click={() => openEditModal(till)}>Editar</button>
+							</td>
+						{/if}
+						{#if user?.permissions?.includes('tills.destroy')}
+							<td>
+								<button class="btn btn-secondary" on:click={() => OpenDeleteModal(till.id)}>Eliminar</button>
+							</td>
+						{/if}
 					</tr>
 				{/each}
 			</tbody>
@@ -192,4 +201,6 @@
 			on:row={handleRowsPerPage}
 		/>
 	</div>
+{:else}
+	<p class="text-center text-gray-500 mt-8">No hay registros</p>
 {/if}

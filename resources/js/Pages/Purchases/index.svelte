@@ -102,7 +102,7 @@
 </script>
 
 <h3 class="mb-4 text-center text-2xl">Compras</h3>
-<div class="flex justify-center">
+<div class="flex justify-center gap-4">
     <label class="input input-bordered flex items-center gap-2">
         <input
             type="text"
@@ -113,6 +113,9 @@
         />
         <SearchIcon />
     </label>
+    {#if user.permissions != undefined && user.permissions.includes("purchases.create")}
+        <button class="btn btn-primary" on:click={() => (_new = true)}>Agregar</button>
+    {/if}
 </div>
 {#if openAlert}
     <Alert {alertMessage} {alertType} on:close={closeAlert} />
@@ -181,14 +184,6 @@
                             </button>
                         </div>
                     </th>
-                    {#if user.permissions != undefined && user.permissions.includes("purchases.create")}
-                        <th
-                            ><button
-                                class="btn btn-primary"
-                                on:click={() => (_new = true)}>Agregar</button
-                            ></th
-                        >
-                    {/if}
                 </tr>
             </thead>
             <tbody>
@@ -243,4 +238,6 @@
             on:row={handleRowsPerPage}
         />
     </div>
+{:else}
+    <p class="text-center text-gray-500 mt-8">No hay registros</p>
 {/if}

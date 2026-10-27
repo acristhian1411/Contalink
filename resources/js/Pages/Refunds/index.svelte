@@ -154,4 +154,6 @@
 			on:row={handleRowsPerPage}
 		/>
 	</div>
+{:else}
+	<p class="text-center text-gray-500 mt-8">No hay registros</p>
 {/if}
