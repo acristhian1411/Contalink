@@ -1,65 +1,45 @@
 <script>
-    import { onMount } from 'svelte';
-    import {blur} from 'svelte/transition';
-    import axios from 'axios';
+    import { blur } from 'svelte/transition';
     import { router } from '@inertiajs/svelte';
 
-    import {Tabs,Modal} from '@components/utilities';
-    import {formatNumber, unformatNumber} from '@components/utilities/NumberFormat.js';
+    import { Tabs, Modal } from '@components/utilities';
+    import { formatNumber } from '@components/utilities/NumberFormat.js';
 
     import Details from './details.svelte';
     import TillsHistory from './TillsHistory.svelte';
     import Transfers from '@pages/Transfers/transfers.svelte';
     import TillActions from './tillActions.svelte';
-    import TillCloseReport from './tillCloseReport.svelte';
     import { Alert } from '@components/Alerts';
 
-	export let user
-    export let id = 0;
-    let till = {};
+    export let user;
+    export let till;
+    export let audits = [];
+    export let tillAmount = null;
+    export let closeReport = null;
+    export let transfers = [];
+    export let openTills = [];
+    export let history;
+
     let tabs = [
         'Acciones',
         'Historial',
         'Transferencias',
         'Detalles',
-        // 'Cierres de caja'
     ];
-    let audits = [];
-    let till_amount
-    let error = null;
-    let url = `/api/tills/`;
     let active = 'Acciones';
     let tillActions = false;
     let acctionType = 'open';
     let alertMessage = '';
     let alertType = '';
     let openAlert = false;
-    $: id, getTillAmount(id);
+
     function handleActiveTab(tab) {
         active = tab.detail;
     }
 
-    async function getTillAmount(tillId) {
-        axios.get(`/api/tills/${tillId}/amount`).then((response) => {
-            till_amount = response.data.till_amount;
-        }).catch((err) => {
-            error = err.request.response;
-        });
-    }
-
-    async function fetchData() {
-        axios.get(`${url}${id}`).then((response) => {
-            till = response.data.data;
-            audits = response.data.audits;
-        }).catch((err) => {
-            error = err.request.response;
-        });
-    }
-
-
-    function OpenAlertMessage(data) {
-        alertMessage = data.detail?.message || '';
-        alertType = data.detail?.type;
+    function OpenAlertMessage(event) {
+        alertMessage = event.detail?.message || '';
+        alertType = event.detail?.type || 'success';
         openAlert = true;
     }
 
@@ -69,24 +49,25 @@
         alertType = '';
     }
 
-    function closeModal(){
+    function reload() {
+        router.reload();
+    }
+
+    function closeModal() {
         tillActions = false;
         acctionType = '';
-        getTillAmount(id);
     }
-    function openModal(type){
-        acctionType = type
+
+    function openModal(type) {
+        acctionType = type;
         tillActions = true;
     }
 
-    function goTo(route){
+    function goTo(route) {
         router.visit(route);
     }
-    onMount(async () => {
-        fetchData();
-        getTillAmount(id);
-    });
 </script>
+
 {#if openAlert}
     <Alert {alertMessage} {alertType} on:close={closeAlert} />
 {/if}
@@ -94,74 +75,61 @@
 	<ul>
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
         <li>
-            <span class="cursor-pointer" on:click={() => goTo('/')}>
-                Inicio
-            </span>
+            <span class="cursor-pointer" on:click={() => goTo('/')}>Inicio</span>
         </li>
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <li><span class="cursor-pointer" on:click={() => goTo('/tills')}>Cajas</span></li>
 	</ul>
 </div>
 
-<Tabs 
-    tabs={tabs} 
+<Tabs
+    {tabs}
     on:active={handleActiveTab}
-    active={active}
-    till={till}
+    {active}
 />
 
 {#if tillActions == true}
     <Modal on:close={() => closeModal()}>
-        <TillActions 
-            type={acctionType} 
-            amount={acctionType == 'close' ? till_amount:0}
-            person_id={user.person_id} 
-            tillId={till.id} 
-            on:updateData={() => fetchData()}
+        <TillActions
+            type={acctionType}
+            amount={acctionType == 'close' ? (tillAmount ?? 0) : 0}
+            person_id={user.person_id}
+            tillId={till.id}
+            {closeReport}
+            on:updateData={() => reload()}
             on:close={() => closeModal()}
-            alert={OpenAlertMessage}
             on:showAlert={OpenAlertMessage}
         />
     </Modal>
 {/if}
 
 {#if active == 'Detalles'}
-    <Details {till} {audits}/>
+    <Details {till} {audits} />
 {:else if active == 'Acciones'}
     <div transition:blur>
-        <h1 class="text-xl font-bold mt-4">
-            Caja: {till.till_name}
-        </h1>
-        <h2 class="text-xl font-bold mt-4">
-            Estado: {till.till_status ? 'Abierto' : 'Cerrado'}
-        </h2>
+        <h1 class="text-xl font-bold mt-4">Caja: {till.till_name}</h1>
+        <h2 class="text-xl font-bold mt-4">Estado: {till.till_status ? 'Abierto' : 'Cerrado'}</h2>
         {#if till.till_status === true}
-            <h2 class="text-xl font-bold mt-4">Monto en caja: {formatNumber(till_amount)}</h2>
+            <h2 class="text-xl font-bold mt-4">Monto en caja: {formatNumber(tillAmount)}</h2>
         {/if}
         {#if till.till_status != true}
-            <button class="btn btn-primary mt-4" on:click={() => openModal('open')}>
-                Abrir caja
-            </button>
+            <button class="btn btn-primary mt-4" on:click={() => openModal('open')}>Abrir caja</button>
         {:else}
-            <button class="btn btn-primary mt-4" on:click={() => openModal('deposit')}>
-                Ingresar dinero
-            </button>
-            <button class="btn btn-secondary mt-4" on:click={() => openModal('close')}>
-                Cerrar caja
-            </button>
+            <button class="btn btn-primary mt-4" on:click={() => openModal('deposit')}>Ingresar dinero</button>
+            <button class="btn btn-secondary mt-4" on:click={() => openModal('close')}>Cerrar caja</button>
         {/if}
     </div>
 {:else if active == 'Historial'}
-    <TillsHistory till_id={id}/>
+    <TillsHistory till_id={till.id} {history} />
 {:else if active == 'Transferencias'}
     <h1 align="center" class="text-xl font-bold mt-4">Transferencias</h1>
-    <Transfers 
-        till_id={id} 
+    <Transfers
+        till_id={till.id}
         origin={till}
-        origin_amount={till_amount}
-        person_id={user.person_id} 
-        />
-{:else if active == 'Cierres de caja'}
-    <TillCloseReport />
-    
+        origin_amount={tillAmount}
+        person_id={user.person_id}
+        {transfers}
+        {openTills}
+        on:updateData={() => reload()}
+    />
 {/if}

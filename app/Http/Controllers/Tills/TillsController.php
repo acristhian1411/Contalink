@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Tills;
 
 use App\Models\Tills;
+use App\Models\TillType;
+use App\Models\TillsTransfer;
+use App\Http\Controllers\TillDetails\TillDetailsController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ApiController;
 use Illuminate\Support\Facades\DB;
@@ -14,9 +17,9 @@ class TillsController extends ApiController
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        try{
+        if ($request->wantsJson()) {
             $t = Tills::query()->first();
             $query = Tills::query();
             $query = $this->filterData($query, $t);
@@ -24,9 +27,30 @@ class TillsController extends ApiController
             ->select('tills.*','till_types.till_type_desc')
             ->get();
             return $this->showAll($datos, 'api','',200);
-        }catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo obtener los datos'],500);            
         }
+
+        $filters = $request->validate([
+            'search' => 'nullable|string|max:100',
+            'sort_by' => 'nullable|in:id,till_name,t_type_id,till_status',
+            'order' => 'nullable|in:asc,desc',
+            'per_page' => 'nullable|integer|in:5,10,20,50,100',
+        ]);
+
+        $items = Tills::query()
+            ->join('till_types', 'tills.t_type_id', '=', 'till_types.id')
+            ->select('tills.*', 'till_types.till_type_desc')
+            ->when($filters['search'] ?? null, function ($q, $v) {
+                $q->where('tills.till_name', 'ilike', "%{$v}%");
+            })
+            ->orderBy('tills.'.($filters['sort_by'] ?? 'id'), $filters['order'] ?? 'asc')
+            ->paginate($filters['per_page'] ?? 10)
+            ->withQueryString();
+
+        return Inertia::render('Tills/index', [
+            'items' => $items,
+            'filters' => $request->only(['search', 'sort_by', 'order', 'per_page']),
+            'tillTypes' => TillType::orderBy('till_type_desc')->get(),
+        ]);
     }
 
     /**
@@ -37,23 +61,19 @@ class TillsController extends ApiController
      */
     public function store(Request $request)
     {
-        try{
-            $rules = [
-                'till_name' => 'required|string|max:255',
-                't_type_id' => 'required|integer',
-            ];
-            $request->validate($rules);
-            $tills = Tills::create($request->all());
-            return $this->showAfterAction($tills,'create',201);
-        }catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'Ocurrió un error al procesar los datos.'],500);            
-        }catch(\Illuminate\Validation\ValidationException $e){
-            return response()->json([
-                'error'=>$e->getMessage(),
-                'message'=>'Los datos no son correctos',
-                'details' => method_exists($e, 'errors') ? $e->errors() : null 
-            ],422);
+        $validated = $request->validate([
+            'till_name' => 'required|string|max:255',
+            'till_account_number' => 'nullable|string|max:50',
+            't_type_id' => 'required|integer|exists:till_types,id',
+        ]);
+
+        $till = Tills::create($validated);
+
+        if ($request->wantsJson()) {
+            return $this->showAfterAction($till, 'create', 201);
         }
+
+        return back()->with('success', 'Caja creada con éxito');
     }
 
     /**
@@ -62,18 +82,62 @@ class TillsController extends ApiController
      * @param  \App\Models\Tills  $tills
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        try{
-            $till = Tills::findOrFail($id);
-            $audits = $till->audits;
-            if(request()->wantsJson()){
-                return $this->showOne($till, $audits, 200);
-            }
-            return Inertia::render('Tills/show', ['tills' => $till, 'audits' => $audits]);
-        }catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo obtener los datos']);            
+        $till = Tills::findOrFail($id);
+
+        if ($request->wantsJson()) {
+            return $this->showOne($till, $till->audits, 200);
         }
+
+        $details = new TillDetailsController();
+
+        return Inertia::render('Tills/show', [
+            'till' => $till,
+            'audits' => $till->audits,
+            'tillAmount' => $till->till_status
+                ? $this->showTillAmount(new Request(['fromController' => true]), (int) $id)
+                : null,
+            'closeReport' => $till->till_status
+                ? $details->closeReportResumeData((int) $id)
+                : null,
+            'transfers' => $this->transfersData((int) $id),
+            'openTills' => Tills::where('till_status', true)
+                ->where('id', '!=', $id)
+                ->orderBy('till_name')
+                ->get(),
+            'history' => $details->historyData($request, (int) $id),
+        ]);
+    }
+
+    /**
+     * Transfers where the given till is origin or destiny.
+     */
+    private function transfersData(int $tillId)
+    {
+        return TillsTransfer::query()
+            ->leftJoin('tills as o', 'o.id', '=', 'tills_transfers.origin_id')
+            ->leftJoin('tills as d', 'd.id', '=', 'tills_transfers.destiny_id')
+            ->where(function ($q) use ($tillId) {
+                $q->where('tills_transfers.origin_id', $tillId)
+                    ->orWhere('tills_transfers.destiny_id', $tillId);
+            })
+            ->select('tills_transfers.*', 'o.till_name as origin_name', 'd.till_name as destiny_name')
+            ->orderByDesc('tills_transfers.t_transfer_date')
+            ->get();
+    }
+
+    /**
+     * Close report page (detailed) rendered as Inertia.
+     */
+    public function closeDetailed($id)
+    {
+        $till = Tills::findOrFail($id);
+
+        return Inertia::render('Tills/tillsCloseReportDetailed', [
+            'till' => $till,
+            'closeReport' => (new TillDetailsController())->closeReportDetailedData((int) $id),
+        ]);
     }
 
     /**
@@ -184,24 +248,20 @@ class TillsController extends ApiController
      */
     public function update(Request $request, $id)
     {
-        try{
-            $rules = [
-                'till_name' => 'required|string|max:255',
-                't_type_id' => 'required|integer',
-            ];
-            $request->validate($rules);
-            $tills = Tills::findOrFail($id);
-            $tills->update($request->all());
-            return $this->showAfterAction($tills,'update',200);
-        }catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo actualizar los datos'],500);
-        }catch(\Illuminate\Validation\ValidationException $e){
-            return response()->json([
-                'error'=>$e->getMessage(),
-                'message'=>'Los datos no son correctos',
-                'details' => method_exists($e, 'errors') ? $e->errors() : null 
-            ],422);
+        $validated = $request->validate([
+            'till_name' => 'required|string|max:255',
+            'till_account_number' => 'nullable|string|max:50',
+            't_type_id' => 'required|integer|exists:till_types,id',
+        ]);
+
+        $till = Tills::findOrFail($id);
+        $till->update($validated);
+
+        if ($request->wantsJson()) {
+            return $this->showAfterAction($till, 'update', 200);
         }
+
+        return back()->with('success', 'Caja actualizada con éxito');
     }
 
     /**
@@ -210,14 +270,15 @@ class TillsController extends ApiController
      * @param  \App\Models\Tills  $tills
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        try{
-            $tills = Tills::findOrFail($id);
-            $tills->delete();
+        $till = Tills::findOrFail($id);
+        $till->delete();
+
+        if ($request->wantsJson()) {
             return response()->json(['message'=>'Eliminado con exito']);
-        }catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo eliminar los datos'],500);
         }
+
+        return back()->with('success', 'Caja eliminada con éxito');
     }
 }

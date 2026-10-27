@@ -1,16 +1,8 @@
 <script>
-    import { onMount } from 'svelte';
-    import axios from 'axios';
-    import {blur} from 'svelte/transition';
+    import { blur } from 'svelte/transition';
     export let till = {};
     export let audits = [];
-    let error = null;
-
 </script>
-
-{#if error}
-	<p>{error}</p>
-{/if}
 
 {#if till}
         <div transition:blur>

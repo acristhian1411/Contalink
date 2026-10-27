@@ -1,38 +1,19 @@
 <script>
-    import { onMount } from 'svelte';
-    import axios from 'axios';
+    import { router } from '@inertiajs/svelte';
     import { createEventDispatcher } from 'svelte';
-    import {Textfield} from '@components/FormComponents';
-    import { Alert } from '@components/Alerts';
+    import { Textfield } from '@components/FormComponents';
     import TillCloseReport from './tillCloseReport.svelte';
-    
 
     const dispatch = createEventDispatcher();
     export let type;
     export let tillId = 0;
     export let person_id = 0;
     export let amount = 0;
-    export let errors = null;
-    let alertMessage = '';
-    let alertType = '';
-    let openAlert = false;
+    export let closeReport = null;
+    let errors = null;
 
-    function OpenAlertMessage(event) {
-        let detail = event
-        dispatch('showAlert', detail);
-        // alertMessage = event.detail.message;
-        // alertType = event.detail.type;
-        // openAlert = true;
-    }
-
-    function updateData(){
+    function updateData() {
         dispatch('updateData');
-    }
-
-    function closeAlert() {
-        openAlert = false;
-        alertMessage = '';
-        alertType = '';
     }
 
     function close() {
@@ -41,97 +22,23 @@
 
     function handleSubmit(event) {
         event.preventDefault();
-        if(type == 'open'){
-            axios.post(`/api/tills/${tillId}/open`, {
-                till_id:tillId,
-                td_amount:amount,
-                person_id:person_id
-            }).then((res) => {
-                let detail = {
-                    detail: {
-                        type: 'success',
-                        message: res.data.message
-                    }
-                };
-                // alert(detail);
-                dispatch('showAlert', detail);
-                OpenAlertMessage(detail);
-                updateData();
-                close();
-            }).catch((err) => {
-                errors = err.response.data.details ? err.response.data.details : null;
-                let detail = {
-                    detail: {
-                        type: 'error',
-                        message: err.response.data.message
-                    }
-                };
-                OpenAlertMessage(detail);
-            });
-        }else if(type == 'close'){
-            axios.post(`/api/tills/${tillId}/close`, {
-                till_id:tillId,
-                td_amount:amount,
-                person_id:person_id
-            }).then((res) => {
-                let detail = {
-                    detail: {
-                        type: 'success',
-                        message: res.data.message
-                    }
-                };
-                updateData();
-                OpenAlertMessage(detail);
-                close();
-            }).catch((err) => {
-                errors = err.response.data.details ? err.response.data.details : null;
-                let detail = {
-                    detail: {
-                        type: 'error',
-                        message: err.response.data.message
-                    }
-                };
-                OpenAlertMessage(detail);
-            });
-        }else if(type == 'deposit'){
-            axios.post(`/api/tills/${tillId}/deposit`, {
-                till_id:tillId,
-                td_amount:amount,
-                person_id:person_id
-            }).then((res) => {
-                let detail = {
-                    detail: {
-                        type: 'success',
-                        message: res.data.message
-                    }
-                };
-                updateData();
-                OpenAlertMessage(detail);
-                close();
-            }).catch((err) => {
-                errors = err.response.data.details ? err.response.data.details : null;
-                let detail = {
-                    detail: {
-                        type: 'error',
-                        message: err.response.data.message
-                    }
-                };
-                OpenAlertMessage(detail);
-            });
-        }
-    }
-    onMount(() => {
-        
-    })
-</script>
 
-{#if openAlert}
-    <Alert {alertMessage} {alertType} on:close={closeAlert} />
-{/if}
-{#if openAlert}
-    <p>hola</p>
-    <p>{alertMessage}</p>
-{/if}
+        router.post(`/tills/${tillId}/${type}`, {
+            till_id: tillId,
+            td_amount: amount,
+            person_id: person_id,
+        }, {
+            onSuccess: () => {
+                dispatch('showAlert', { type: 'success', message: type == 'open' ? 'Caja abierta con éxito' : 'Ingreso realizado con éxito' });
+                updateData();
+                close();
+            },
+            onError: (err) => {
+                errors = Object.values(err).flat();
+            },
+        });
+    }
+</script>
 
 <h1 class="text-xl font-bold mt-4 text-center">
     {#if type == 'open'}
@@ -147,40 +54,28 @@
     <form on:submit|preventDefault={handleSubmit}>
         <div class="grid grid-cols-12 gap-4 mt-4 mb-4">
             <div class="col-span-4">
-                <Textfield
-                    label="Monto"
-                    required={true}
-                    type="number"
-                    bind:value={amount}
-                />
+                <Textfield label="Monto" required={true} type="number" bind:value={amount} />
             </div>
         </div>
         <button class="btn btn-primary" type="submit">Abrir caja</button>
     </form>
 {:else if type == 'close'}
-    <!-- //TODO el monto con el que se tiene que cerrar la caja debe estar por defecto y el textfield tiene que estar desabilitado -->
-    
-        <div class="gap-4 mt-4 mb-4">
-            <TillCloseReport 
-                tillId={tillId} 
-                amount={amount} 
-                alert={OpenAlertMessage}
-                person_id={person_id}
-                on:updateData={() => updateData()}
-                on:close={() => close()}
-                on:showAlert={() => OpenAlertMessage()}
-            />
-        </div>
+    <div class="gap-4 mt-4 mb-4">
+        <TillCloseReport
+            {tillId}
+            {amount}
+            {person_id}
+            cierreCaja={closeReport}
+            on:updateData={() => updateData()}
+            on:close={() => close()}
+            on:showAlert={(e) => dispatch('showAlert', e.detail)}
+        />
+    </div>
 {:else if type == 'deposit'}
     <form on:submit|preventDefault={handleSubmit}>
         <div class="grid grid-cols-12 gap-4 mt-4 mb-4">
             <div class="col-span-6">
-                <Textfield
-                    label="Monto"
-                    required={true}
-                    type="number"
-                    bind:value={amount}
-                />
+                <Textfield label="Monto" required={true} type="number" bind:value={amount} />
             </div>
         </div>
         <button class="btn btn-primary" type="submit">Ingresar dinero</button>

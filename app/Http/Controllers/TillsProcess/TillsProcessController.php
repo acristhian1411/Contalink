@@ -53,10 +53,16 @@ class TillsProcessController extends ApiController{
                 ]);
                 $detProofPayment->store($proofs);
                 DB::commit();
-                return response()->json(['message'=>'Caja abierta con exito']);
+                if ($request->wantsJson()) {
+                    return response()->json(['message'=>'Caja abierta con exito']);
+                }
+                return back()->with('success', 'Caja abierta con éxito');
             }catch(\Exception $e){
                 DB::rollback();
-                return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo abrir la caja'],500);
+                if ($request->wantsJson()) {
+                    return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo abrir la caja'],500);
+                }
+                return back()->withErrors(['general' => $e->getMessage()]);
             }catch(\Illuminate\Validation\ValidationException $e){
                 DB::rollback();
                 return response()->json(['error'=>$e->getMessage(),'message'=>'Los datos enviados no son correctos'],420);
@@ -106,11 +112,17 @@ class TillsProcessController extends ApiController{
                 $detProofPayment->store($proofs);
                 
                 DB::commit();
-                return response()->json(['message'=>'Caja cerrada con exito']);
+                if ($request->wantsJson()) {
+                    return response()->json(['message'=>'Caja cerrada con exito']);
+                }
+                return back()->with('success', 'Caja cerrada con éxito');
             
         }catch(\Exception $e){
             DB::rollback();
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo cerrar la caja'],500);
+            if ($request->wantsJson()) {
+                return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo cerrar la caja'],500);
+            }
+            return back()->withErrors(['general' => $e->getMessage()]);
         }
     }
 
@@ -155,11 +167,17 @@ class TillsProcessController extends ApiController{
             $detProofPayment->store($proofs);
             
             DB::commit();
-            return response()->json(['message'=>'Deposito realizado con exito']);
+            if ($request->wantsJson()) {
+                return response()->json(['message'=>'Deposito realizado con exito']);
+            }
+            return back()->with('success', 'Depósito realizado con éxito');
             
         }catch(\Exception $e){
             DB::rollback();
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo realizar el deposito'],500);
+            if ($request->wantsJson()) {
+                return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo realizar el deposito'],500);
+            }
+            return back()->withErrors(['general' => $e->getMessage()]);
         }
     }
 
@@ -170,24 +188,36 @@ class TillsProcessController extends ApiController{
     * @return \Illuminate\Http\JsonResponse
     */
     public function transfer(Request $req,$id){
-        try{
-            $rules = [
-                'destiny_id' => 'required|integer',
-                't_transfer_amount' => 'required|numeric',
-                't_transfer_obs' => 'required|string|max:255'
-            ];
-            $req->validate($rules);
-            DB::beginTransaction();
-            $tillsTransfers = new TillsTransfersController;
-            $tills = new TillsController;
-            $till_data = new Request([
-                'fromController'=> true
-            ]);
-            $till_amount = $tills->showTillAmount($till_data,$id);
-            if($till_amount < $req->t_transfer_amount){
+        $rules = [
+            'destiny_id' => 'required|integer|exists:tills,id',
+            't_transfer_amount' => 'required|numeric',
+            't_transfer_obs' => 'required|string|max:255'
+        ];
+        $req->validate($rules);
+
+        $tills = new TillsController;
+        $till_data = new Request([
+            'fromController'=> true
+        ]);
+        $till_amount = $tills->showTillAmount($till_data, (int) $id);
+
+        if ($till_amount === false) {
+            if ($req->wantsJson()) {
+                return response()->json(['error'=>'La caja está cerrada','message'=>'La caja está cerrada'],400);
+            }
+            return back()->withErrors(['t_transfer_amount' => 'La caja está cerrada']);
+        }
+
+        if ($till_amount < $req->t_transfer_amount){
+            if ($req->wantsJson()) {
                 return response()->json(['error'=>'No hay suficiente efectivo en la caja para realizar la transferencia','message'=>'No hay suficiente efectivo en la caja para realizar la transferencia'],400);
             }
+            return back()->withErrors(['t_transfer_amount' => 'No hay suficiente efectivo en la caja para realizar la transferencia']);
+        }
 
+        DB::beginTransaction();
+        try{
+            $tillsTransfers = new TillsTransfersController;
             $now = date('Y-m-d');
             $transfer_req = new Request([
                 'origin_id' => $id,
@@ -240,10 +270,16 @@ class TillsProcessController extends ApiController{
             ]);
             $detProofPayment->store($proofs);
             DB::commit();
-            return response()->json(['message'=>'Transferencia realizada con exito']);
+            if ($req->wantsJson()) {
+                return response()->json(['message'=>'Transferencia realizada con exito']);
+            }
+            return back()->with('success', 'Transferencia realizada con éxito');
         }catch(\Exception $e){
             DB::rollback();
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo realizar la transferencia'],500);
+            if ($req->wantsJson()) {
+                return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo realizar la transferencia'],500);
+            }
+            return back()->withErrors(['general' => $e->getMessage()]);
         }
     }
 }

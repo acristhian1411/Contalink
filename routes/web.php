@@ -147,17 +147,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // TILLS MANAGEMENT - Web Routes
     // ========================================
     Route::prefix('tills')->name('tills.')->group(function () {
-        Route::get('/', function () {
-            return Inertia::render('Tills/index');
-        })->middleware('permission:tills.index')->name('index');
+        Route::get('/', [TillsController::class, 'index'])->middleware('permission:tills.index')->name('index');
 
-        Route::get('/{id}', function ($id) {
-            return Inertia::render('Tills/show', ['id' => $id]);
-        })->middleware('permission:tills.show')->name('show');
+        Route::get('/{id}', [TillsController::class, 'show'])->middleware('permission:tills.show')->name('show');
 
-        Route::get('/{id}/close-detailed', function ($id) {
-            return Inertia::render('Tills/tillsCloseReportDetailed', ['id' => $id]);
-        })->middleware('permission:tills.show')->name('close-detailed');
+        Route::get('/{id}/close-detailed', [TillsController::class, 'closeDetailed'])->middleware('permission:tills.show')->name('close-detailed');
 
         Route::post('/', [TillsController::class, 'store'])->middleware('permission:tills.create')->name('store');
         Route::put('/{id}', [TillsController::class, 'update'])->middleware('permission:tills.update')->name('update');

@@ -1,33 +1,10 @@
 <script>
-    import {formatNumber } from '@components/utilities/NumberFormat.js';
-    import { onMount } from 'svelte';
+    import { formatNumber } from '@components/utilities/NumberFormat.js';
 
-    export let id;
-    let errors = null;
-    let cierreCaja;
-
-    function getTillData(){
-        axios.get(`/api/tills/${id}/closeReportDetailed`).then((response) => {
-            cierreCaja = response.data;
-            console.log('datos de cierre de caja: ',cierreCaja)
-        }).catch((err) => {
-            errors = err.response.data.details ? err.response.data.details : null;
-        });
-    }
-
-    onMount(async () => {
-        getTillData();
-    });
-
+    export let till;
+    export let closeReport;
 </script>
-  
-  {#if errors}
-    <p>
-      {errors}
-    </p>
-  {/if}
 
-{#if cierreCaja}
   <div class="p-6 bg-base-200 rounded-lg shadow-md space-y-6">
     <h2 class="text-2xl font-bold mb-4">Detalles del Cierre de Caja</h2>
   
@@ -45,8 +22,8 @@
             </tr>
           </thead>
           <tbody>
-            {#if cierreCaja.incomes.length > 0}
-              {#each cierreCaja.incomes as income}
+            {#if closeReport.incomes.length > 0}
+              {#each closeReport.incomes as income}
                 <tr>
                   <td>{income.td_date}</td>
                   <td>{income.person_fname} {income.person_lastname}</td>
@@ -55,7 +32,7 @@
                 </tr>
               {/each}
               <tr>
-                <td colspan="4" class="text-center">Total: Gs. {formatNumber(cierreCaja.incomes.reduce((acc, curr) => acc + curr.td_amount, 0))}</td>
+                <td colspan="4" class="text-center">Total: Gs. {formatNumber(closeReport.incomes.reduce((acc, curr) => acc + curr.td_amount, 0))}</td>
               </tr>
             {:else}
               <tr>
@@ -81,8 +58,8 @@
             </tr>
           </thead>
           <tbody>
-            {#if cierreCaja.expenses.length > 0}
-              {#each cierreCaja.expenses as expense}
+            {#if closeReport.expenses.length > 0}
+              {#each closeReport.expenses as expense}
                 <tr>
                   <td>{expense.td_date}</td>
                   <td>{expense.person_fname} {expense.person_lastname}</td>
@@ -91,7 +68,7 @@
                 </tr>
               {/each}
               <tr>
-                <td colspan="4" class="text-center">Total: Gs. {formatNumber(cierreCaja.expenses.reduce((acc, curr) => acc + curr.td_amount, 0))}</td>
+                <td colspan="4" class="text-center">Total: Gs. {formatNumber(closeReport.expenses.reduce((acc, curr) => acc + curr.td_amount, 0))}</td>
               </tr>
             {:else}
               <tr>
@@ -103,4 +80,3 @@
       </div>
     </div>
   </div>
-{/if}
