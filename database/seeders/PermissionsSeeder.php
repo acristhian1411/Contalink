@@ -188,6 +188,12 @@ class PermissionsSeeder extends Seeder
         Permission::firstOrCreate(['name'=>'sales.create','guard_name'=> 'web']);
         Permission::firstOrCreate(['name'=>'sales.update','guard_name'=> 'web']);
         Permission::firstOrCreate(['name'=>'sales.destroy','guard_name'=> 'web']);
+        // permissions for refunds
+        Permission::firstOrCreate(['name'=>'refunds.index','guard_name'=> 'web']);
+        Permission::firstOrCreate(['name'=>'refunds.show','guard_name'=> 'web']);
+        Permission::firstOrCreate(['name'=>'refunds.create','guard_name'=> 'web']);
+        Permission::firstOrCreate(['name'=>'refunds.update','guard_name'=> 'web']);
+        Permission::firstOrCreate(['name'=>'refunds.destroy','guard_name'=> 'web']);
         // permissions for salesdetails
         Permission::firstOrCreate(['name'=>'salesdetails.index','guard_name'=> 'web']);
         Permission::firstOrCreate(['name'=>'salesdetails.show','guard_name'=> 'web']);

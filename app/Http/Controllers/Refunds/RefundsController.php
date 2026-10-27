@@ -3,35 +3,56 @@
 namespace App\Http\Controllers\Refunds;
 
 use App\Models\Refunds;
+use App\Models\RefundDetails;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\ApiController;
-use App\Http\Controllers\RefundDetails\RefundDetailsController;
 use App\Models\Products;
 use App\Models\SalesDetails;
+use Inertia\Inertia;
 
 class RefundsController extends ApiController
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        try{
+        if ($request->wantsJson()) {
             $t = Refunds::query()->first();
             $query = Refunds::with([
                 'sale.sales_details.product.measurementUnit',
                 'refundDetails.product.measurementUnit'
             ]);
             $query = $this->filterData($query, $t);
-            $datos = $query->get();
-            return $this->showAll($datos, 200);
-        }catch(\Exception $e){
-            return response()->json([
-                'error' => $e,
-                'message' => 'No se pudo obtener los registros'
-            ]);
+            return $this->showAll($query->get(), 200);
         }
+
+        $filters = $request->validate([
+            'search' => 'nullable|string|max:100',
+            'sort_by' => 'nullable|in:id,refund_date,refund_status',
+            'order' => 'nullable|in:asc,desc',
+            'per_page' => 'nullable|integer|in:5,10,20,50,100',
+        ]);
+
+        $items = Refunds::with(['sale.person'])
+            ->when($filters['search'] ?? null, function ($q, $v) {
+                $q->whereHas('sale', function ($s) use ($v) {
+                    $s->where('sale_number', 'ilike', "%{$v}%")
+                        ->orWhereHas('person', function ($p) use ($v) {
+                            $p->where('person_fname', 'ilike', "%{$v}%")
+                                ->orWhere('person_lastname', 'ilike', "%{$v}%");
+                        });
+                });
+            })
+            ->orderBy($filters['sort_by'] ?? 'id', $filters['order'] ?? 'asc')
+            ->paginate($filters['per_page'] ?? 10)
+            ->withQueryString();
+
+        return Inertia::render('Refunds/index', [
+            'items' => $items,
+            'filters' => $request->only(['search', 'sort_by', 'order', 'per_page']),
+        ]);
     }
 
     /**
@@ -39,7 +60,7 @@ class RefundsController extends ApiController
      */
     public function create()
     {
-        //
+        return Inertia::render('Refunds/form');
     }
 
     /**
@@ -47,24 +68,31 @@ class RefundsController extends ApiController
      */
     public function store(Request $request)
     {
-        try{
+        $validated = $request->validate([
+            'sale_id' => 'required|integer|exists:sales,id',
+            'refund_date' => 'required|date',
+            'refund_obs' => 'nullable|string',
+            'refund_details' => 'required|array|min:1',
+            'refund_details.*.product_id' => 'required|integer|exists:products,id',
+            'refund_details.*.sd_qty_devuelto' => 'required|numeric|min:1',
+        ]);
+
+        try {
             DB::beginTransaction();
-            $rules = [
-                'sale_id' => 'required',
-                'refund_date' => 'required',
-                'refund_obs' => 'nullable',
-                'refund_details' => 'required|array',
-            ];
-            $request->validate($rules);
 
             // Validate refund quantities against original sale quantities
-            $this->validateRefundQuantities($request->sale_id, $request->refund_details);
+            $this->validateRefundQuantities($validated['sale_id'], $validated['refund_details']);
 
-            $refunds = Refunds::create($request->all());
-            
+            $refund = Refunds::create([
+                'sale_id' => $validated['sale_id'],
+                'refund_date' => $validated['refund_date'],
+                'refund_obs' => $validated['refund_obs'] ?? null,
+                'refund_status' => 'pending',
+            ]);
+
             // Process refund details and update inventory
             $refundDetailsData = [];
-            foreach($request->refund_details as $detail){
+            foreach ($validated['refund_details'] as $detail) {
                 $product = Products::with('measurementUnit')->findOrFail($detail['product_id']);
                 $refundQuantity = $detail['sd_qty_devuelto'];
 
@@ -78,7 +106,7 @@ class RefundsController extends ApiController
                 $product->increment('product_quantity', $refundQuantity);
 
                 $refundDetailsData[] = [
-                    'refund_id' => $refunds->id,
+                    'refund_id' => $refund->id,
                     'product_id' => $detail['product_id'],
                     'quantity' => $refundQuantity,
                     'created_at' => now(),
@@ -86,106 +114,102 @@ class RefundsController extends ApiController
                 ];
             }
 
-            // Insert refund details
             RefundDetails::insert($refundDetailsData);
 
             DB::commit();
-            return response()->json(['message'=>'Registro creado con exito','data'=>$refunds],201);
-        }
-        catch(\Illuminate\Validation\ValidationException $e){
+        } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'error'=>$e->getMessage(),
-                'message'=>'Los datos no son correctos',
-                'details' => method_exists($e, 'errors') ? $e->errors() : null 
-            ],422);
+
+            if ($request->wantsJson()) {
+                return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo crear el registro'], 422);
+            }
+
+            return back()->withErrors(['general' => $e->getMessage()]);
         }
-        catch(\Exception $e){
-            DB::rollBack();
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo crear el registro']);
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Registro creado con exito', 'data' => $refund], 201);
         }
+
+        return redirect()->route('refunds.index')->with('success', 'Devolución creada con éxito');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Refunds $refunds)
+    public function show(Request $request, $id)
     {
-        try{
-            $refunds = Refunds::with([
-                'sale.sales_details.product.measurementUnit',
-                'refundDetails.product.measurementUnit'
-            ])->findOrFail($refunds->id);
-            
-            $audits = $refunds->audits;
-            return $this->showOne($refunds,$audits,200);
-        }catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo obtener los datos']);
-        }
-    }
+        $refund = Refunds::with([
+            'sale.sales_details.product.measurementUnit',
+            'refundDetails.product.measurementUnit'
+        ])->findOrFail($id);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Refunds $refunds)
-    {
-        //
+        if ($request->wantsJson()) {
+            return $this->showOne($refund, $refund->audits, 200);
+        }
+
+        return Inertia::render('Refunds/show', [
+            'refund' => $refund,
+            'audits' => $refund->audits,
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, int $id)
+    public function update(Request $request, $id)
     {
-        try{
-            $rules = [
-                'sale_id' => 'required',
-                'refund_date' => 'required',
-                'refund_obs' => 'nullable',
-                'refund_status' => 'required',
-            ];
-            $request->validate($rules);
-            $refunds = Refunds::findOrFail($id);
-            $refunds->update($request->all());
-            return response()->json(['message'=>'Registro Actualizado con exito','data'=>$refunds],200);
-        }catch(\Illuminate\Validation\ValidationException $e){
-            return response()->json([
-                'error'=>$e->getMessage(),
-                'message'=>'Los datos no son correctos',
-                'details' => method_exists($e, 'errors') ? $e->errors() : null 
-            ],422);
+        $validated = $request->validate([
+            'sale_id' => 'required|integer',
+            'refund_date' => 'required|date',
+            'refund_obs' => 'nullable|string',
+            'refund_status' => 'required|string',
+        ]);
+
+        $refund = Refunds::findOrFail($id);
+        $refund->update($validated);
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Registro Actualizado con exito', 'data' => $refund], 200);
         }
-        catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo actualizar el registro']);
-        }
+
+        return back()->with('success', 'Devolución actualizada con éxito');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(int $id)
+    public function destroy(Request $request, $id)
     {
-        try{
+        try {
             DB::beginTransaction();
-            
-            $refunds = Refunds::with('refundDetails.product')->findOrFail($id);
-            
+
+            $refund = Refunds::with('refundDetails.product')->findOrFail($id);
+
             // Reverse inventory updates before deleting
-            foreach ($refunds->refundDetails as $detail) {
+            foreach ($refund->refundDetails as $detail) {
                 $product = $detail->product;
-                // Subtract the refunded quantity back from inventory
                 $product->decrement('product_quantity', $detail->quantity);
             }
-            
-            $refunds->delete();
-            
+
+            $refund->delete();
+
             DB::commit();
-            return response()->json(['message'=>'Eliminado con exito']);
-        }
-        catch(\Exception $e){
+        } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo eliminar el registro']);
+
+            if ($request->wantsJson()) {
+                return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo eliminar el registro'], 500);
+            }
+
+            return back()->withErrors(['general' => $e->getMessage()]);
         }
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Eliminado con exito']);
+        }
+
+        return back()->with('success', 'Devolución eliminada con éxito');
     }
 
     /**
@@ -227,7 +251,7 @@ class RefundsController extends ApiController
             if ($totalRefundQuantity > $originalQuantity) {
                 $product = $saleDetails[$productId]->product;
                 $unitName = $product->measurementUnit ? $product->measurementUnit->unit_name : 'Unidad';
-                
+
                 throw new \Exception(
                     "Cantidad de devolución excede la cantidad original para {$product->product_name}. " .
                     "Original: {$originalQuantity} {$unitName}, " .

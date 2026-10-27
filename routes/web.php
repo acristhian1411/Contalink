@@ -75,6 +75,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [SalesController::class, 'index'])->middleware('permission:sales.index')->name('index');
         Route::get('/create', [SalesController::class, 'create'])->middleware('permission:sales.create')->name('create');
         Route::post('/', [SalesController::class, 'store'])->middleware('permission:sales.create')->name('store');
+        Route::get('/search/{searchTerm}', [SalesController::class, 'searchByNumber'])->middleware('permission:sales.show')->name('search');
         Route::get('/{id}', [SalesController::class, 'show'])->middleware('permission:sales.show')->name('show');
         Route::put('/{id}', [SalesController::class, 'update'])->middleware('permission:sales.update')->name('update');
         Route::delete('/{id}', [SalesController::class, 'destroy'])->middleware('permission:sales.destroy')->name('destroy');
@@ -96,19 +97,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // REFUNDS MANAGEMENT - Web Routes
     // ========================================
     Route::prefix('refunds')->name('refunds.')->group(function () {
-        Route::get('/', function () {
-            return Inertia::render('Refunds/index');
-        })->middleware('permission:refunds.index')->name('index');
+        Route::get('/', [RefundsController::class, 'index'])->middleware('permission:refunds.index')->name('index');
 
-        Route::get('/create', function () {
-            return Inertia::render('Refunds/form');
-        })->middleware('permission:refunds.create')->name('create');
+        Route::get('/create', [RefundsController::class, 'create'])->middleware('permission:refunds.create')->name('create');
 
         Route::post('/', [RefundsController::class, 'store'])->middleware('permission:refunds.create')->name('store');
 
-        Route::get('/{id}', function ($id) {
-            return Inertia::render('Refunds/show', ['id' => $id]);
-        })->middleware('permission:refunds.show')->name('show');
+        Route::get('/{id}', [RefundsController::class, 'show'])->middleware('permission:refunds.show')->name('show');
+
+        Route::put('/{id}', [RefundsController::class, 'update'])->middleware('permission:refunds.update')->name('update');
+
+        Route::delete('/{id}', [RefundsController::class, 'destroy'])->middleware('permission:refunds.destroy')->name('destroy');
     });
 
     // ========================================
