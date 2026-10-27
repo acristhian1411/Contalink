@@ -5,7 +5,7 @@ export const personsItems =(user)=> [
         label: 'Proveedores',
         route: '/persons/providers',
         icon: BoxesIcon,
-        permission: user != undefined && user.permissions != undefined && user.permissions.includes('persons.index')
+        permission: user != undefined && user.permissions != undefined && user.permissions.includes('providers.index')
     },
     {
         label: 'Empleados',

@@ -62,10 +62,6 @@ class User extends Authenticatable implements AuditableContract
             'password' => 'hashed',
         ];
     }
-    public function getAllPermissions()
-    {
-        return $this->permissions()->get();
-    }
     public function getRoleNames()
     {
         return $this->roles()->get();

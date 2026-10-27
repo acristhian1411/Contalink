@@ -39,16 +39,18 @@ class AppServiceProvider extends ServiceProvider
                         $permissions = Role::whereIn('name', $roles)
                                            ->with('permissions') // Asegúrate de tener la relación definida en el modelo Role
                                            ->get()
-                                           ->pluck('permissions.*.name') // Extraer los nombres de los permisos
+                                           ->pluck('permissions')
+                                           ->flatten()
+                                           ->pluck('name')
                                            ->unique()
                                            ->values()
-                                           ->toArray(); // Eliminar duplicados
-                        
+                                           ->toArray(); // Extraer los nombres de todos los roles
+
                         return [
                             'id' => Auth::user()->id,
                             'person_id'=>Auth::user()->person_id,
                             'roles' => $roles,
-                            'permissions' => $permissions[0],
+                            'permissions' => $permissions,
                         ];
                     }
                     return null;
