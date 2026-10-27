@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Persons;
 use App\Models\Persons;
 use App\Models\Countries;
 use App\Models\Cities;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ApiController;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
 class PersonsController extends ApiController
@@ -142,8 +144,26 @@ class PersonsController extends ApiController
             'country_id' => 'required|integer',
             'city_id' => 'required|integer',
         ];
+
+        if ($request->filled('email')) {
+            $reglas['email'] = 'required|email|unique:users,email';
+            $reglas['password'] = 'required|string|min:6';
+        }
+
         $request->validate($reglas);
         $dato = Persons::create($request->all());
+
+        // Employees also create a user account when email/password are provided
+        if ($request->filled('email')) {
+            User::create([
+                'name' => $request->filled('name')
+                    ? $request->name
+                    : trim($request->person_fname.' '.$request->person_lastname),
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'person_id' => $dato->id,
+            ]);
+        }
 
         if ($request->wantsJson()) {
             return response()->json(['message'=>'Registro creado con exito','data'=>$dato]);
