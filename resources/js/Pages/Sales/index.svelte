@@ -1,56 +1,40 @@
 <script>
-    import { onMount } from "svelte";
     import { router } from '@inertiajs/svelte';
-    import axios from "axios";
     import { Pagination, DeleteModal, Modal } from "@components/utilities/";
     import { Alert, ErrorAlert } from "@components/Alerts/";
     import { SearchIcon, SortIcon } from "@components/Icons/";
     import Form from "./form.svelte";
 
     export let user;
-    let data = [];
-    let error = null;
+    export let items;
+    export let filters = {};
+    export let staticData;
+    export let userContext;
+    export let formConfig;
+
     let openAlert = false;
     let _new = false;
     let edit = false;
     let item = null;
-    let search_param = "";
     let openDeleteModal = false;
     let alertMessage = "";
     let alertType = "";
     let id = 0;
-    let orderBy = "person_id";
-    let order = "asc";
-    let total_pages;
-    let total_items;
-    let current_page = 1;
-    let items_per_page = "10";
-    let url = `/api/sales?`;
 
-    function updateData() {
-        fetchData();
-        closeModal();
+    $: data = items?.data ?? [];
+    $: current_page = items?.current_page ?? 1;
+    $: total_pages = items?.last_page ?? 1;
+    $: items_per_page = items?.per_page ? String(items.per_page) : "10";
+    $: orderBy = filters?.sort_by ?? "id";
+    $: order = filters?.order ?? "asc";
+
+    function refresh(params = {}, replace = true) {
+        router.get('/sales', { ...filters, ...params }, { preserveState: true, replace });
     }
 
-    async function fetchData(page = current_page, rows = items_per_page) {
-        let token = "";
-        let config = {
-            headers: {},
-        };
-        axios
-            .get(
-                `${url}sort_by=${orderBy}&order=${order}&page=${page}&per_page=${rows}`,
-                config,
-            )
-            .then((response) => {
-                data = response.data.data;
-                current_page = response.data.currentPage;
-                total_items = response.data.per_page;
-                total_pages = response.data.last_page;
-            })
-            .catch((err) => {
-                error = err.request.response;
-            });
+    function updateData() {
+        router.reload({ only: ['items'] });
+        closeModal();
     }
 
     function closeAlert() {
@@ -63,24 +47,13 @@
         alertMessage = event.detail.message;
     }
 
-    function ClearError() {
-        error = null;
-    }
-
     function deleteRecord() {
-        let token = "";
-        let config = {
-            headers: {},
-        };
-        axios.delete(`/api/deletesale/${id}`, config).then((res) => {
-            let detail = {
-                detail: {
-                    type: "delete",
-                    message: res.data.message,
-                },
-            };
-            OpenAlertMessage(detail);
-            closeDeleteModal();
+        router.delete(`/sales/${id}`, {
+            onSuccess: () => {
+                OpenAlertMessage({ detail: { type: "delete", message: "Venta eliminada con éxito" } });
+                openDeleteModal = false;
+                router.reload({ only: ['items'] });
+            },
         });
     }
 
@@ -103,13 +76,11 @@
 
     function closeDeleteModal() {
         openDeleteModal = false;
-        fetchData();
     }
 
     function sortData(param) {
-        orderBy = param;
-        order = order == "asc" ? "desc" : "asc";
-        fetchData(current_page, items_per_page);
+        const nextOrder = orderBy === param && order === 'asc' ? 'desc' : 'asc';
+        refresh({ sort_by: param, order: nextOrder });
     }
 
     function OpenDeleteModal(data) {
@@ -118,32 +89,18 @@
     }
 
     function handleRowsPerPage(event) {
-        items_per_page = event.detail.value;
-        fetchData(current_page, event.detail.value);
+        refresh({ per_page: event.detail.value, page: 1 });
     }
 
     function handlePage(event) {
-        current_page = event.detail.value;
-        fetchData(event.detail.value, items_per_page);
+        refresh({ page: event.detail.value }, false);
     }
 
     function search(event) {
-        search_param = event.target.value;
-        url =
-            search_param === ""
-                ? `/api/sales?`
-                : `/api/sales?person_id=${search_param}&`;
-        fetchData(1, items_per_page);
+        refresh({ search: event.target.value, page: 1 });
     }
-
-    onMount(async () => {
-        fetchData();
-    });
 </script>
 
-{#if error}
-    <ErrorAlert message={error} on:clearError={ClearError} />
-{/if}
 <h3 class="mb-4 text-center text-2xl">Ventas</h3>
 <div class="flex justify-center">
     <label class="input input-bordered flex items-center gap-2">
@@ -151,6 +108,7 @@
             type="text"
             class="grow"
             placeholder="Buscar"
+            value={filters.search ?? ''}
             on:change={search}
         />
         <SearchIcon />
@@ -172,6 +130,9 @@
     <Modal on:close={() => updateData()}>
         <Form
             {edit}
+            {staticData}
+            {userContext}
+            {formConfig}
             on:message={OpenAlertMessage}
             on:close={() => updateData()}
         />
@@ -182,12 +143,15 @@
         <Form
             {edit}
             {item}
+            {staticData}
+            {userContext}
+            {formConfig}
             on:message={OpenAlertMessage}
             on:close={() => updateData()}
         />
     </Modal>
 {/if}
-{#if data}
+{#if data.length}
     <div class="overflow-x-auto">
         <table class="table w-full">
             <thead>
@@ -204,7 +168,7 @@
                     <th class="text-center text-lg">
                         <div class="flex items-center justify-center">
                             Fecha
-                            <button on:click={() => sortData("purchase_date")}>
+                            <button on:click={() => sortData("sale_date")}>
                                 <SortIcon />
                             </button>
                         </div>
@@ -232,9 +196,9 @@
                     <tr class="hover">
                         <td>{i + 1}</td>
                         <td class="text-center"
-                            >{item.person.person_fname +
+                            >{item.person?.person_fname +
                                 " " +
-                                item.person.person_lastname}</td
+                                item.person?.person_lastname}</td
                         >
                         <td class="text-center">{item.sale_date}</td>
                         <td class="text-center"

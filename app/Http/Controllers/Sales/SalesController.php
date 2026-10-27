@@ -22,16 +22,32 @@ use PDF;
 
 class SalesController extends WebController
 {
-    public function index()
+    public function index(Request $request)
     {
-        if (request()->wantsJson()) {
-            $query = $this->filterData(Sales::query(), Sales::query()->first());
-            return $this->showAll($query->with('person')->get(), 'api', '', 200);
-        }
+        $filters = $request->validate([
+            'search' => 'nullable|string|max:100',
+            'sort_by' => 'nullable|in:id,sale_date,sale_status,person_id',
+            'order' => 'nullable|in:asc,desc',
+            'per_page' => 'nullable|integer|in:5,10,20,50,100',
+        ]);
+
+        $items = Sales::with('person')
+            ->when($filters['search'] ?? null, function ($q, $v) {
+                $q->whereHas('person', function ($p) use ($v) {
+                    $p->where('person_fname', 'ilike', "%{$v}%")
+                        ->orWhere('person_lastname', 'ilike', "%{$v}%");
+                });
+            })
+            ->orderBy($filters['sort_by'] ?? 'id', $filters['order'] ?? 'asc')
+            ->paginate($filters['per_page'] ?? 10)
+            ->withQueryString();
 
         return Inertia::render('Sales/index', [
+            'items' => $items,
+            'filters' => $request->only(['search', 'sort_by', 'order', 'per_page']),
+            'staticData' => $this->getStaticData(),
             'userContext' => $this->getUserContext(),
-            'filters' => $this->getSalesFilters(),
+            'formConfig' => $this->getSalesFormConfiguration(),
         ]);
     }
 
@@ -111,7 +127,11 @@ class SalesController extends WebController
 
             DB::commit();
 
-            return $this->showAfterAction([], 'create', 201);
+            if ($request->wantsJson()) {
+                return $this->showAfterAction([], 'create', 201);
+            }
+
+            return redirect()->route('sales.index')->with('success', 'Venta creada con éxito');
         } catch (QuantityValidationException $e) {
             DB::rollBack();
             return response()->json(['errors' => $e->getErrors(), 'message' => 'Problemas con la venta'], 422);
@@ -132,13 +152,9 @@ class SalesController extends WebController
                 'tills_details.tillproofPayments.proofPayments.paymentType',
             ])->findOrFail($id);
 
-            if (request()->wantsJson()) {
-                return $this->showOne($sale, $sale->audits, 200);
-            }
-
             return Inertia::render('Sales/show', [
                 'sale' => $sale,
-                'userContext' => $this->getUserContext(),
+                'audits' => $sale->audits,
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo obtener los datos'], 500);
@@ -160,7 +176,11 @@ class SalesController extends WebController
             $sales = Sales::findOrFail($id);
             $sales->update($request->only(['person_id', 'sale_desc', 'sale_date', 'sale_number', 'sale_status', 'sale_type']));
 
-            return $this->showAfterAction($sales, 'update', 200);
+            if ($request->wantsJson()) {
+                return $this->showAfterAction($sales, 'update', 200);
+            }
+
+            return redirect()->route('sales.index')->with('success', 'Venta actualizada con éxito');
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo actualizar los datos'], 500);
         }
@@ -201,10 +221,14 @@ class SalesController extends WebController
 
             DB::commit();
 
-            return response()->json([
-                'message' => 'Venta eliminada con éxito',
-                'data' => ['sale_id' => $saleId],
-            ], 200);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => 'Venta eliminada con éxito',
+                    'data' => ['sale_id' => $saleId],
+                ], 200);
+            }
+
+            return redirect()->back()->with('success', 'Venta eliminada con éxito');
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo eliminar la venta'], 500);

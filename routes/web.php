@@ -76,6 +76,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/create', [SalesController::class, 'create'])->middleware('permission:sales.create')->name('create');
         Route::post('/', [SalesController::class, 'store'])->middleware('permission:sales.create')->name('store');
         Route::get('/{id}', [SalesController::class, 'show'])->middleware('permission:sales.show')->name('show');
+        Route::put('/{id}', [SalesController::class, 'update'])->middleware('permission:sales.update')->name('update');
+        Route::delete('/{id}', [SalesController::class, 'destroy'])->middleware('permission:sales.destroy')->name('destroy');
     });
 
     // ========================================

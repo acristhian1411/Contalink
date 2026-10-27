@@ -1,42 +1,16 @@
-
 <script>
-    import { onMount } from 'svelte';
-    import axios from 'axios';
     import { blur } from 'svelte/transition';
     import { router } from '@inertiajs/svelte';
 
-    export let id ;
-    
-    let item = {};
-    let audits = [];
-    let error = null;
-    let url = `/api/sales/`;
+    export let sale;
+    export let audits = [];
 
-    async function fetchData() {
-        axios.get(`${url}${id}`).then((response) => {
-            item = response.data.data;
-            audits = response.data.audits;
-        }).catch((err) => {
-            error = JSON.parse(err.request.response);
-        });
-    }
-
-    onMount(async () => {
-        console.log(id);
-        fetchData();
-    });
+    let item = sale;
 
     function goTo(route){
         router.visit(route);
     }
 </script>
-
-{#if error}
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-        <strong class="font-bold">Error!</strong>
-        <span class="block sm:inline">{error.message}</span>
-    </div>
-{/if}
 
 <div class="breadcrumbs text-md mb-4">
     <ul>
