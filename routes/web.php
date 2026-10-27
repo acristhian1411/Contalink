@@ -88,6 +88,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/create', [PurchasesController::class, 'create'])->middleware('permission:purchases.create')->name('create');
         Route::post('/', [PurchasesController::class, 'store'])->middleware('permission:purchases.create')->name('store');
         Route::get('/{id}', [PurchasesController::class, 'show'])->middleware('permission:purchases.show')->name('show');
+        Route::put('/{id}', [PurchasesController::class, 'update'])->middleware('permission:purchases.update')->name('update');
+        Route::delete('/{id}', [PurchasesController::class, 'destroy'])->middleware('permission:purchases.destroy')->name('destroy');
     });
 
     // ========================================

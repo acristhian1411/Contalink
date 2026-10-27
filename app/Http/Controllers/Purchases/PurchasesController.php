@@ -23,18 +23,32 @@ use PDF;
 
 class PurchasesController extends WebController
 {
-    public function index()
+    public function index(Request $request)
     {
-        if (request()->wantsJson()) {
-            $query = $this->filterData(Purchases::query(), Purchases::query()->first());
-            $datos = $query->with(['person', 'purchaseDetails.product.measurementUnit'])->get();
-            $this->decorateUnits($datos);
-            return $this->showAll($datos, 'api', '', 200);
-        }
+        $filters = $request->validate([
+            'search' => 'nullable|string|max:100',
+            'sort_by' => 'nullable|in:id,purchase_date,purchase_status,person_id',
+            'order' => 'nullable|in:asc,desc',
+            'per_page' => 'nullable|integer|in:5,10,20,50,100',
+        ]);
+
+        $items = Purchases::with(['person', 'purchaseDetails.product.measurementUnit'])
+            ->when($filters['search'] ?? null, function ($q, $v) {
+                $q->whereHas('person', function ($p) use ($v) {
+                    $p->where('person_fname', 'ilike', "%{$v}%")
+                        ->orWhere('person_lastname', 'ilike', "%{$v}%");
+                });
+            })
+            ->orderBy($filters['sort_by'] ?? 'id', $filters['order'] ?? 'asc')
+            ->paginate($filters['per_page'] ?? 10)
+            ->withQueryString();
 
         return Inertia::render('Purchases/index', [
+            'items' => $items,
+            'filters' => $request->only(['search', 'sort_by', 'order', 'per_page']),
+            'staticData' => $this->getStaticData(),
             'userContext' => $this->getUserContext(),
-            'filters' => $this->getPurchasesFilters(),
+            'formConfig' => $this->getPurchasesFormConfiguration(),
         ]);
     }
 
@@ -124,7 +138,11 @@ class PurchasesController extends WebController
 
             DB::commit();
 
-            return $this->showAfterAction([], 'create', 201);
+            if ($request->wantsJson()) {
+                return $this->showAfterAction([], 'create', 201);
+            }
+
+            return redirect()->route('purchases.index')->with('success', 'Compra creada con éxito');
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
             return response()->json([
@@ -140,26 +158,14 @@ class PurchasesController extends WebController
 
     public function show($id)
     {
-        try {
-            $purchase = Purchases::with(['person', 'purchaseDetails.product.measurementUnit'])->find($id);
+        $purchase = Purchases::with(['person', 'purchaseDetails.product.measurementUnit'])->findOrFail($id);
 
-            if (!$purchase) {
-                return response()->json(['error' => 'Compra no encontrada', 'message' => 'La compra especificada no existe'], 404);
-            }
+        $this->decorateUnits(collect([$purchase]));
 
-            $this->decorateUnits(collect([$purchase]));
-
-            if (request()->wantsJson()) {
-                return $this->showOne($purchase, $purchase->audits, 200);
-            }
-
-            return Inertia::render('Purchases/show', [
-                'purchase' => $purchase,
-                'userContext' => $this->getUserContext(),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage(), 'message' => 'Ocurrió un error mientras se obtenía el registro'], 500);
-        }
+        return Inertia::render('Purchases/show', [
+            'purchase' => $purchase,
+            'audits' => $purchase->audits,
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -177,7 +183,11 @@ class PurchasesController extends WebController
             $purchase = Purchases::find($id);
             $purchase->update($request->only(['person_id', 'purchase_desc', 'purchase_date', 'purchase_number', 'purchase_status', 'purchase_type']));
 
-            return $this->showAfterAction($purchase, 'update', 200);
+            if ($request->wantsJson()) {
+                return $this->showAfterAction($purchase, 'update', 200);
+            }
+
+            return redirect()->route('purchases.index')->with('success', 'Compra actualizada con éxito');
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'message' => 'Ocurrió un error mientras se actualizaba el registro'], 500);
         }
@@ -216,10 +226,14 @@ class PurchasesController extends WebController
 
             DB::commit();
 
-            return response()->json([
-                'message' => 'Compra eliminada con éxito',
-                'data' => ['purchase_id' => $purchaseId],
-            ], 200);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => 'Compra eliminada con éxito',
+                    'data' => ['purchase_id' => $purchaseId],
+                ], 200);
+            }
+
+            return redirect()->back()->with('success', 'Compra eliminada con éxito');
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo eliminar la compra'], 500);
