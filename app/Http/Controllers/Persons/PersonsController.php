@@ -3,12 +3,101 @@
 namespace App\Http\Controllers\Persons;
 
 use App\Models\Persons;
+use App\Models\Countries;
+use App\Models\Cities;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ApiController;
 use Inertia\Inertia;
 
 class PersonsController extends ApiController
 {
+    public function clientsIndex(Request $request)
+    {
+        return $this->renderIndex($request, 2, 'Clients/index');
+    }
+
+    public function providersIndex(Request $request)
+    {
+        return $this->renderIndex($request, 1, 'Providers/index');
+    }
+
+    public function employeesIndex(Request $request)
+    {
+        return $this->renderIndex($request, 0, 'Employees/index');
+    }
+
+    public function clientsShow($id)
+    {
+        return $this->renderShow($id, 'Clients/show');
+    }
+
+    public function providersShow($id)
+    {
+        return $this->renderShow($id, 'Providers/show');
+    }
+
+    public function employeesShow($id)
+    {
+        return $this->renderShow($id, 'Employees/show');
+    }
+
+    private function renderShow(int $id, string $page)
+    {
+        $person = Persons::query()
+            ->join('person_types', 'person_types.id', '=', 'persons.p_type_id')
+            ->join('countries', 'countries.id', '=', 'persons.country_id')
+            ->join('cities', 'cities.id', '=', 'persons.city_id')
+            ->select('persons.*', 'person_types.p_type_desc', 'countries.country_name', 'cities.city_name')
+            ->where('persons.id', $id)
+            ->firstOrFail();
+
+        return Inertia::render($page, [
+            'person' => $person,
+            'audits' => $person->audits,
+        ]);
+    }
+
+    private function renderIndex(Request $request, int $typeId, string $page)
+    {
+        $filters = $request->validate([
+            'search' => 'nullable|string|max:100',
+            'sort_by' => 'nullable|in:id,person_fname,person_lastname,person_idnumber',
+            'order' => 'nullable|in:asc,desc',
+            'per_page' => 'nullable|integer|in:5,10,20,50,100',
+        ]);
+
+        $sortBy = $filters['sort_by'] ?? 'person_fname';
+        $order = $filters['order'] ?? 'asc';
+
+        $items = Persons::query()
+            ->leftJoin('person_types', 'person_types.id', '=', 'persons.p_type_id')
+            ->leftJoin('countries', 'countries.id', '=', 'persons.country_id')
+            ->leftJoin('cities', 'cities.id', '=', 'persons.city_id')
+            ->where('persons.p_type_id', $typeId)
+            ->when($filters['search'] ?? null, function ($query, $search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('persons.person_fname', 'ilike', "%{$search}%")
+                        ->orWhere('persons.person_lastname', 'ilike', "%{$search}%")
+                        ->orWhere('persons.person_corpname', 'ilike', "%{$search}%")
+                        ->orWhere('persons.person_idnumber', 'ilike', "%{$search}%")
+                        ->orWhere('persons.person_ruc', 'ilike', "%{$search}%");
+                });
+            })
+            ->select('persons.*', 'person_types.p_type_desc', 'countries.country_name', 'cities.city_name')
+            ->orderBy("persons.{$sortBy}", $order)
+            ->paginate($filters['per_page'] ?? 10)
+            ->withQueryString();
+
+        return Inertia::render($page, [
+            'items' => $items,
+            'filters' => $request->only(['search', 'sort_by', 'order', 'per_page']),
+            'staticData' => [
+                'countries' => Countries::all(),
+                'cities' => Cities::all(),
+            ],
+        ]);
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -41,32 +130,26 @@ class PersonsController extends ApiController
      */
     public function store(Request $request)
     {
-        try{
-            $reglas = [
-                'person_fname' => $request->p_type_id != 1 ? 'required|string|max:255':'',
-                'person_lastname' => $request->p_type_id != 1 ? 'required|string|max:255':'',
-                'person_corpname' => 'nullable|string|max:255',
-                'person_idnumber' => $request->p_type_id != 1 ? 'required|string|max:50':'',
-                'person_ruc' => 'nullable|string|max:50',
-                'person_birtdate' => $request->p_type_id != 1 ? 'required|date':'',
-                'person_address' => 'required|string|max:255',
-                'p_type_id' => 'required|integer',
-                'country_id' => 'required|integer',
-                'city_id' => 'required|integer',
-            ];
-            $request->validate($reglas);
-            $dato = Persons::create($request->all());
+        $reglas = [
+            'person_fname' => $request->p_type_id != 1 ? 'required|string|max:255':'',
+            'person_lastname' => $request->p_type_id != 1 ? 'required|string|max:255':'',
+            'person_corpname' => 'nullable|string|max:255',
+            'person_idnumber' => $request->p_type_id != 1 ? 'required|string|max:50':'',
+            'person_ruc' => 'nullable|string|max:50',
+            'person_birtdate' => $request->p_type_id != 1 ? 'required|date':'',
+            'person_address' => 'required|string|max:255',
+            'p_type_id' => 'required|integer',
+            'country_id' => 'required|integer',
+            'city_id' => 'required|integer',
+        ];
+        $request->validate($reglas);
+        $dato = Persons::create($request->all());
+
+        if ($request->wantsJson()) {
             return response()->json(['message'=>'Registro creado con exito','data'=>$dato]);
-        }catch(\Illuminate\Validation\ValidationException $e){
-            return response()->json([
-                'error'=>$e->getMessage(),
-                'message'=>'Los datos no son correctos',
-                'details' => method_exists($e, 'errors') ? $e->errors() : null 
-            ],422);
-        }catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),
-        'message'=>'No se pudo crear los datos'], 500);
         }
+
+        return redirect()->back()->with('success', 'Registro creado con exito');
     }
 
     /**
@@ -112,32 +195,27 @@ class PersonsController extends ApiController
      */
     public function update(Request $request, $id)
     {
-        try{
-            $reglas = [
-                'person_fname' => $request->p_type_id != 1 ? 'required|string|max:255':'',
-                'person_lastname' => $request->p_type_id != 1 ? 'required|string|max:255':'',
-                'person_corpname' => 'nullable|string|max:255',
-                'person_idnumber' => $request->p_type_id != 1 ? 'required|string|max:50':'',
-                'person_ruc' => 'nullable|string|max:50',
-                'person_birtdate' => 'required|date',
-                'person_address' => 'required|string|max:255',
-                'p_type_id' => 'required|integer',
-                'country_id' => 'required|integer',
-                'city_id' => 'required|integer',
-            ];
-            $request->validate($reglas);
-            $persons = Persons::find($id);
-            $persons->update($request->all());
+        $reglas = [
+            'person_fname' => $request->p_type_id != 1 ? 'required|string|max:255':'',
+            'person_lastname' => $request->p_type_id != 1 ? 'required|string|max:255':'',
+            'person_corpname' => 'nullable|string|max:255',
+            'person_idnumber' => $request->p_type_id != 1 ? 'required|string|max:50':'',
+            'person_ruc' => 'nullable|string|max:50',
+            'person_birtdate' => 'required|date',
+            'person_address' => 'required|string|max:255',
+            'p_type_id' => 'required|integer',
+            'country_id' => 'required|integer',
+            'city_id' => 'required|integer',
+        ];
+        $request->validate($reglas);
+        $persons = Persons::findOrFail($id);
+        $persons->update($request->all());
+
+        if ($request->wantsJson()) {
             return response()->json(['message'=>'Registro Actualizado con exito','data'=>$persons]);
-        }catch(\Illuminate\Validation\ValidationException $e){
-            return response()->json([
-                'error'=>$e->getMessage(),
-                'message'=>'Los datos no son correctos',
-                'details' => method_exists($e, 'errors') ? $e->errors() : null 
-            ],422);
-        }catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo actualizar los datos'],500);
         }
+
+        return redirect()->back()->with('success', 'Registro actualizado con exito');
     }
 
     /**
@@ -155,6 +233,13 @@ class PersonsController extends ApiController
         }catch(\Exception $e){
             return response()->json(['error'=>$e->getMessage(),'message'=>'No se pudo eliminar los datos'],500);
         }
+    }
+
+    public function destroyFromWeb($id)
+    {
+        Persons::findOrFail($id)->delete();
+
+        return redirect()->back()->with('success', 'Registro eliminado correctamente');
     }
 
     public function searchPerType(Request $request, $type){

@@ -116,43 +116,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ========================================
     Route::prefix('persons')->name('persons.')->group(function () {
         // Clients
-        Route::get('/clients', function () {
-            return Inertia::render('Clients/index');
-        })->middleware('permission:clients.index')->name('clients.index');
+        Route::get('/clients', [PersonsController::class, 'clientsIndex'])->middleware('permission:clients.index')->name('clients.index');
 
-        Route::get('/clients/{id}', function ($id) {
-            return Inertia::render('Clients/show', ['id' => $id]);
-        })->middleware('permission:clients.show')->name('clients.show');
+        Route::get('/clients/{id}', [PersonsController::class, 'clientsShow'])->middleware('permission:clients.show')->name('clients.show');
 
         Route::post('/clients', [PersonsController::class, 'store'])->middleware('permission:clients.create')->name('clients.store');
         Route::put('/clients/{id}', [PersonsController::class, 'update'])->middleware('permission:clients.update')->name('clients.update');
-        Route::delete('/clients/{id}', [PersonsController::class, 'destroy'])->middleware('permission:clients.destroy')->name('clients.destroy');
+        Route::delete('/clients/{id}', [PersonsController::class, 'destroyFromWeb'])->middleware('permission:clients.destroy')->name('clients.destroy');
 
         // Providers
-        Route::get('/providers', function () {
-            return Inertia::render('Providers/index');
-        })->middleware('permission:providers.index')->name('providers.index');
+        Route::get('/providers', [PersonsController::class, 'providersIndex'])->middleware('permission:providers.index')->name('providers.index');
 
-        Route::get('/providers/{id}', function ($id) {
-            return Inertia::render('Providers/show', ['id' => $id]);
-        })->middleware('permission:providers.show')->name('providers.show');
+        Route::get('/providers/{id}', [PersonsController::class, 'providersShow'])->middleware('permission:providers.show')->name('providers.show');
 
         Route::post('/providers', [PersonsController::class, 'store'])->middleware('permission:providers.create')->name('providers.store');
         Route::put('/providers/{id}', [PersonsController::class, 'update'])->middleware('permission:providers.update')->name('providers.update');
-        Route::delete('/providers/{id}', [PersonsController::class, 'destroy'])->middleware('permission:providers.destroy')->name('providers.destroy');
+        Route::delete('/providers/{id}', [PersonsController::class, 'destroyFromWeb'])->middleware('permission:providers.destroy')->name('providers.destroy');
 
         // Employees
-        Route::get('/employees', function () {
-            return Inertia::render('Employees/index');
-        })->middleware('permission:employees.index')->name('employees.index');
+        Route::get('/employees', [PersonsController::class, 'employeesIndex'])->middleware('permission:employees.index')->name('employees.index');
 
-        Route::get('/employees/{id}', function ($id) {
-            return Inertia::render('Employees/show', ['id' => $id]);
-        })->middleware('permission:employees.show')->name('employees.show');
+        Route::get('/employees/{id}', [PersonsController::class, 'employeesShow'])->middleware('permission:employees.show')->name('employees.show');
 
         Route::post('/employees', [PersonsController::class, 'store'])->middleware('permission:employees.create')->name('employees.store');
         Route::put('/employees/{id}', [PersonsController::class, 'update'])->middleware('permission:employees.update')->name('employees.update');
-        Route::delete('/employees/{id}', [PersonsController::class, 'destroy'])->middleware('permission:employees.destroy')->name('employees.destroy');
+        Route::delete('/employees/{id}', [PersonsController::class, 'destroyFromWeb'])->middleware('permission:employees.destroy')->name('employees.destroy');
     });
 
     // ========================================

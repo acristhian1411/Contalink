@@ -1,58 +1,48 @@
 
 <script>
 	// @ts-nocheck
-	import { onMount } from 'svelte';
 	import { router } from '@inertiajs/svelte';
-	// import { isLoggedIn, getToken} from '../../services/authservice'
-	// import {goto} from '$app/navigation';
-	import axios from 'axios';
 	import {Pagination, DeleteModal, Modal} from '@components/utilities/';
-	import {Alert, ErrorAlert} from '@components/Alerts/';
+	import {Alert} from '@components/Alerts/';
 	import {SearchIcon, SortIcon} from '@components/Icons/';
 	import Form from './form.svelte';
-	// import { appUrl } from '$env/static/public';
-	export let user
-	let data = [];
-	let error = null;
+	export let items;
+	export let filters = {};
+	export let user;
+	export let staticData;
 	let openAlert = false;
 	let _new = false;
 	let edit = false;
 	let item = null;
-	let search_param = '';
+	let search_param = filters.search ?? '';
 	let openDeleteModal = false;
 	let alertMessage = '';
 	let alertType = '';
 	let id = 0;
-	let orderBy = 'person_fname';
-	let order = 'asc';
-	let total_pages;
-	let total_items;
-	let current_page = 1;
-	let items_per_page = '10';
-	let url = `/api/persons?p_type_id=2&`;
+	let orderBy = filters.sort_by ?? 'person_fname';
+	let order = filters.order ?? 'asc';
+	let items_per_page = String(items.per_page);
 
 	function updateData() {
-		fetchData();
+		router.reload({ only: ['items', 'filters'] });
 		closeModal();
 	}
 
-	async function fetchData(page = current_page, rows = items_per_page) {
-		let token = '';
-		let config = {
-			headers: {},
-		}
-		axios
-			// .get('/api/users')
-			.get(`${url}sort_by=${orderBy}&order=${order}&page=${page}&per_page=${rows}`,config)
-			.then((response) => {
-				data = response.data.data;
-				current_page = response.data.currentPage;
-				total_items = response.data.per_page;
-				total_pages = response.data.last_page;
-			})
-			.catch((err) => {
-				error = err.request.response;
-			});
+	function visit(params = {}) {
+		const query = {
+			search: search_param || undefined,
+			sort_by: orderBy,
+			order,
+			per_page: items_per_page,
+			page: items.current_page,
+			...params,
+		};
+
+		router.get(window.location.pathname, query, {
+			preserveState: true,
+			preserveScroll: true,
+			replace: true,
+		});
 	}
 
 	function closeAlert() {
@@ -60,92 +50,71 @@
 	}
 
 	function OpenAlertMessage(event) {
-		console.log('details desde index',event.detail);
 		openAlert = true;
 		alertType = event.detail.type;
 		alertMessage = event.detail.message;
 	}
 
-	function ClearError(){
-		error = null;
-	}
-
 	function deleteRecord() {
-		let token = '';
-		let config = {
-			headers: {},
-		}
-		axios.delete(`/api/persons/${id}`, config).then((res) => {
-			let detail = {
-				detail: {
-					type: 'delete',
-					message: res.data.message
-				}
-			};
-			OpenAlertMessage(detail);
-			closeDeleteModal();
+		router.delete(`${window.location.pathname}/${id}`, {
+			onSuccess: () => {
+				OpenAlertMessage({ detail: { type: 'delete', message: 'Registro eliminado correctamente' } });
+				closeDeleteModal();
+			},
 		});
 	}
+
 	function openEditModal(data) {
 		edit = true;
 		item = data;
 		_new = false;
 	}
+
 	function closeModal() {
 		edit = false;
 		_new = false;
 	}
+
 	function openNewModal() {
 		edit = false;
 		item = null;
 		_new = true;
 	}
+
 	function closeDeleteModal() {
 		openDeleteModal = false;
-		fetchData();
+		router.reload({ only: ['items', 'filters'] });
 	}
+
 	function sortData(param) {
 		orderBy = param;
-		if (order == 'asc') {
-			order = 'desc';
-		} else {
-			order = 'asc';
-		}
-		fetchData(current_page, items_per_page);
+		order = order === 'asc' ? 'desc' : 'asc';
+		visit({ page: 1, sort_by: orderBy, order });
 	}
+
 	function OpenDeleteModal(data) {
 		id = data;
 		openDeleteModal = true;
 	}
+
 	function handleRowsPerPage(event) {
 		items_per_page = event.detail.value;
-		fetchData(current_page, event.detail.value);
+		visit({ page: 1, per_page: items_per_page });
 	}
+
 	function handlePage(event) {
-		current_page = event.detail.value;
-		fetchData(event.detail.value, items_per_page);
+		visit({ page: event.detail.value });
 	}
-	function search(event) {
-		search_param = event.target.value;
-		if (search_param == '') {
-			url = `/api/persons?p_type_id=2&`;
-		} else {
-			url = `/api/persons-search-by-type/2?search=${search_param}&`;
-		}
-		fetchData(1, items_per_page);
+
+	function search() {
+		visit({ page: 1 });
 	}
-	onMount(async () => {
-		fetchData();
-	});
 </script>
 
-{#if error}
-	<ErrorAlert message={error} on:clearError={ClearError} />
-{/if}
 <h3 class="mb-4 text-center text-2xl">Clientes</h3>
 <div class="flex justify-center">
 	<label class="input input-bordered flex items-center gap-2">
-		<input type="text" class="grow" placeholder="Search" on:change={search} />
+		<input type="text" class="grow" placeholder="Search" bind:value={search_param} on:change={search} />
 		<SearchIcon />
 	</label>
 </div>
@@ -159,15 +128,15 @@
 {/if}
 {#if _new == true}
 	<Modal on:close={() => updateData()}>
-		<Form {edit} on:message={OpenAlertMessage} on:close={() => updateData()} />
+		<Form {edit} {staticData} on:message={OpenAlertMessage} on:close={() => updateData()} />
 	</Modal>
 {/if}
 {#if edit == true}
 	<Modal on:close={() => updateData()}>
-		<Form {edit} {item} on:message={OpenAlertMessage} on:close={() => updateData()} />
+		<Form {edit} {item} {staticData} on:message={OpenAlertMessage} on:close={() => updateData()} />
 	</Modal>
 {/if}
-{#if data}
+{#if items}
 	<div class="overflow-x-auto">
 		<table class="table w-full">
 			<thead>
@@ -215,7 +184,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each data as person, i (person.id)}
+				{#each items.data as person (person.id)}
 					<tr class="hover">
 						<td>{person.id}</td>
 						<td class="text-center">{person.person_idnumber}</td>
@@ -223,7 +192,7 @@
 						<td class="text-center">{person.person_lastname}</td>
 						{#if user.permissions != undefined && user.permissions.includes('clients.show')}
 							<td>
-								<button class="btn btn-info" on:click={() => router.visit(`/clients/${person.id}`)}>
+								<button class="btn btn-info" on:click={() => router.visit(`/persons/clients/${person.id}`)}>
 									Mostrar
 								</button>
 							</td>
@@ -247,8 +216,8 @@
 			</tbody>
 		</table>
 		<Pagination
-			current_page={current_page?current_page:1}
-			{total_pages}
+			current_page={items.current_page}
+			total_pages={items.last_page}
 			{items_per_page}
 			on:page={handlePage}
 			on:row={handleRowsPerPage}

@@ -59,7 +59,7 @@
 		form.person_idnumber = form.person_ruc; // Set ID number same as RUC
 
 		if (edit) {
-			form.put(`/persons/${item.id}`, {
+			form.put(`/persons/clients/${item.id}`, {
 				onSuccess: () => {
 					history.back();
 				},
@@ -68,7 +68,7 @@
 				}
 			});
 		} else {
-			form.post('/persons', {
+			form.post('/persons/clients', {
 				onSuccess: () => {
 					history.back();
 				},

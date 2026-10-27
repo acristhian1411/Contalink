@@ -1,61 +1,41 @@
 <script>
-    import { onMount } from 'svelte';
-    import {blur} from 'svelte/transition';
-    import axios from 'axios';
+    import { blur } from 'svelte/transition';
     import { router } from '@inertiajs/svelte';
-    export let user;
-    export let id = 0;
-    let data = [];
-    let audits = [];
-    let error = null;
-    let url = `/api/persons/`;
 
-    async function fetchData() {
-        axios.get(`${url}${id}`).then((response) => {
-            data = response.data.data;
-            audits = response.data.audits;
-        }).catch((err) => {
-            error = err.request.response;
-        });
-    }
+    export let person;
+    export let audits = [];
 
-    onMount(async () => {
-        console.log(user);
-        fetchData();
-    });
     function goTo(route){
         router.visit(route);
     }
 </script>
-{#if error}
-	<p>{error}</p>
-{/if}
+
 <div class="breadcrumbs text-md mb-4">
 	<ul>
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <li><span class="cursor-pointer" on:click={()=>goTo("/")}>Inicio</span></li>
         <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <li><span class="cursor-pointer" on:click={()=>goTo("/clients")}>Clientes</span></li>
+        <li><span class="cursor-pointer" on:click={()=>goTo("/persons/clients")}>Clientes</span></li>
 	</ul>
 </div>
-{#if data}
+{#if person}
     <div transition:blur>
         <h1 class="text-xl font-bold">Nombre:</h1>
-        <p class="text-1xl">{data.person_fname}</p>
+        <p class="text-1xl">{person.person_fname}</p>
         <h1 class="text-xl font-bold mt-4">Apellido:</h1>
-        <p class="text-1xl">{data.person_lastname}</p>
+        <p class="text-1xl">{person.person_lastname}</p>
         <h1 class="text-xl font-bold mt-4">Razón Social:</h1>
-        <p class="text-1xl">{data.person_corpname}</p>
+        <p class="text-1xl">{person.person_corpname}</p>
         <h1 class="text-xl font-bold mt-4">Código RUC:</h1>
-        <p class="text-1xl">{data.person_ruc}</p>
+        <p class="text-1xl">{person.person_ruc}</p>
         <h1 class="text-xl font-bold mt-4">Dirección:</h1>
-        <p class="text-1xl">{data.person_address}</p>
+        <p class="text-1xl">{person.person_address}</p>
         <h1 class="text-xl font-bold mt-4">País:</h1>
-        <p class="text-1xl">{data.country_name}</p>
+        <p class="text-1xl">{person.country_name}</p>
         <h1 class="text-xl font-bold mt-4">Ciudad:</h1>
-        <p class="text-1xl">{data.city_name}</p>
+        <p class="text-1xl">{person.city_name}</p>
         <h1 class="text-xl font-bold mt-4">Tipo:</h1>
-        <p class="text-1xl">{data.p_type_desc}</p>
+        <p class="text-1xl">{person.p_type_desc}</p>
     </div>
 {/if}
 {#if audits}
@@ -64,7 +44,6 @@
         <table class="table w-full">
             <thead>
                 <tr>
-                    <!-- <th>Id</th> -->
                     <th class="text-center text-lg">Usuario</th>
                     <th class="text-center text-lg">Evento</th>
                     <th class="text-center text-lg">Fecha</th>
@@ -81,7 +60,6 @@
                             <strong>Valores antiguos:</strong> {JSON.stringify(audit.old_values)}<br>
                             <strong>Valores nuevos:</strong> {JSON.stringify(audit.new_values)}
                         </td>
-    
                     </tr>
                 {/each}
             </tbody>
