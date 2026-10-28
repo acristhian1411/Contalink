@@ -6,7 +6,7 @@
     export let searchTerm;
     export let showDropdown;
     export let loading;
-    export let filteredItem;
+    export let filteredItem = [];
     export let searchFromApi;
     export let items
     export let label
@@ -92,7 +92,7 @@ It will show up on hover.
                 autocomplete="off"
             />
             <!-- Dropdown de países filtrados -->
-            {#if showDropdown == true && filteredItem.length > 0}
+            {#if showDropdown == true && (filteredItem ?? []).length > 0}
                 <ul class="absolute z-10 mt-1 bg-white border border-gray-300 rounded-md shadow-lg w-full">
                     {#if loading == true}
                         <!-- Loader mientras se buscan los países -->
