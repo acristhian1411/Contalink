@@ -1,7 +1,6 @@
 <script>
     import { onMount } from 'svelte';
     import {blur} from 'svelte/transition';
-    import axios from 'axios';
     import { router } from '@inertiajs/svelte';
     import JsBarcode from 'jsbarcode';
     export let id = 0;
@@ -9,7 +8,6 @@
     export let audits;
     let barcodeElement
     let error = null;
-    let url = `/api/products/`;
     let barcode_copies = 1
 
     function print(){
@@ -78,7 +76,6 @@
     }
 
     onMount(async () => {
-        // fetchData();
         if(barcodeElement){
           JsBarcode(barcodeElement, `${product.product_barcode}`, {
               format: 'CODE128',

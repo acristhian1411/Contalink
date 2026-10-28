@@ -1,57 +1,38 @@
-
 <script>
-	// @ts-nocheck
-	import { onMount } from 'svelte';
 	import { router } from '@inertiajs/svelte';
-	// import { isLoggedIn, getToken} from '../../services/authservice'
-	// import {goto} from '$app/navigation';
-	import axios from 'axios';
-	import {Pagination, DeleteModal, Modal} from '@components/utilities/';
-	import {Alert, ErrorAlert} from '@components/Alerts/';
-	import {SearchIcon, SortIcon} from '@components/Icons/';
+	import { Pagination, DeleteModal, Modal } from '@components/utilities/';
+	import { Alert } from '@components/Alerts/';
+	import { SearchIcon, SortIcon } from '@components/Icons/';
 	import Form from './form.svelte';
-	// import { appUrl } from '$env/static/public';
-	export let user
-	export let data;
-	let products = [];
-	let error = null;
+
+	export let user;
+	export let items;
+	export let filters = {};
+	export let staticData = null;
+
 	let openAlert = false;
 	let _new = false;
 	let edit = false;
 	let item = null;
-	let search_param = '';
 	let openDeleteModal = false;
 	let alertMessage = '';
 	let alertType = '';
 	let id = 0;
-	let orderBy = 'p_type_desc';
-	let order = 'asc';
-	let total_pages;
-	let total_items;
-	let current_page = 1;
-	let items_per_page = '10';
-	let url = `/products/?`;
+
+	$: data = items?.data ?? [];
+	$: current_page = items?.current_page ?? 1;
+	$: total_pages = items?.last_page ?? 1;
+	$: items_per_page = items?.per_page ? String(items.per_page) : '10';
+	$: orderBy = filters?.sort_by ?? 'id';
+	$: order = filters?.order ?? 'asc';
+
+	function refresh(params = {}, replace = true) {
+		router.get('/products', { ...filters, ...params }, { preserveState: true, replace });
+	}
 
 	function updateData() {
-		fetchData(current_page, items_per_page, orderBy, order);
+		router.reload({ only: ['items'] });
 		closeModal();
-	}
-
-	async function assignData(data) {
-		products = data.data;
-		current_page = data.current_page;
-		total_items = data.per_page;
-		total_pages = data.last_page;
-	}
-
-	function fetchData(page = current_page, rows = items_per_page, orderBy = orderBy, order = order) {
-		axios.get(`${url}sort_by=${orderBy}&order=${order}&page=${page}&per_page=${rows}`)
-			.then((response) => {
-				assignData(response.data);
-			})
-			.catch((err) => {
-				error = err.request.response;
-			});
 	}
 
 	function closeAlert() {
@@ -64,171 +45,139 @@
 		alertMessage = event.detail.message;
 	}
 
-	function ClearError(){
-		error = null;
-	}
-
 	function deleteRecord() {
-		let token = '';
-		let config = {
-			headers: {},
-		}
-		axios.delete(`/products/${id}`, config).then((res) => {
-			let detail = {
-				detail: {
-					type: 'delete',
-					message: res.data.message
-				}
-			};
-			OpenAlertMessage(detail);
-			closeDeleteModal();
+		router.delete(`/products/${id}`, {
+			onSuccess: () => {
+				OpenAlertMessage({ detail: { type: 'delete', message: 'Producto eliminado con éxito' } });
+				openDeleteModal = false;
+			},
+			onError: () => {
+				openDeleteModal = false;
+			},
 		});
 	}
-	function openEditModal(data) {
+
+	function openEditModal(row) {
 		edit = true;
-		item = data;
+		item = row;
 		_new = false;
 	}
+
 	function closeModal() {
 		edit = false;
 		_new = false;
 	}
-	function openNewModal() {
-		edit = false;
-		item = null;
-		_new = true;
-	}
+
 	function closeDeleteModal() {
 		openDeleteModal = false;
-		fetchData(current_page, items_per_page, orderBy, order);
 	}
+
 	function sortData(param) {
-		orderBy = param;
-		if (order == 'asc') {
-			order = 'desc';
-		} else {
-			order = 'asc';
-		}
-		fetchData(current_page, items_per_page);
+		const nextOrder = orderBy === param && order === 'asc' ? 'desc' : 'asc';
+		refresh({ sort_by: param, order: nextOrder });
 	}
-	function OpenDeleteModal(data) {
-		id = data;
+
+	function OpenDeleteModal(rowId) {
+		id = rowId;
 		openDeleteModal = true;
 	}
+
 	function handleRowsPerPage(event) {
-		items_per_page = event.detail.value;
-		fetchData(current_page, event.detail.value, orderBy, order);
+		refresh({ per_page: event.detail.value, page: 1 });
 	}
+
 	function handlePage(event) {
-		current_page = event.detail.value;
-		fetchData(event.detail.value, items_per_page, orderBy, order);
+		refresh({ page: event.detail.value }, false);
 	}
+
 	function search(event) {
-		search_param = event.target.value;
-		if (search_param == '') {
-			url = `/products?`;
-		} else {
-			url = `/products?product_name=${search_param}&product_barcode=${search_param}&`;
-		}
-		fetchData(1, items_per_page, orderBy, order);
+		refresh({ search: event.target.value, page: 1 });
 	}
-	onMount(async () => {
-		// if(!isLoggedIn()){
-		// 	goto('/login');
-		// }
-		fetchData(current_page, items_per_page, orderBy, order);
-	});
 </script>
 
-{#if error}
-	<ErrorAlert message={error} on:clearError={ClearError} />
-{/if}
 <h3 class="mb-4 text-center text-2xl">Productos</h3>
-<div class="flex justify-center">
+<div class="flex justify-center gap-4">
 	<label class="input input-bordered flex items-center gap-2">
-		<input type="text" class="grow" placeholder="Search" on:change={search} />
+		<input
+			type="text"
+			class="grow"
+			placeholder="Buscar"
+			value={filters.search ?? ''}
+			on:change={search}
+		/>
 		<SearchIcon />
 	</label>
+	{#if user?.permissions?.includes('products.create')}
+		<button class="btn btn-primary" on:click={() => (_new = true)}>Agregar</button>
+	{/if}
 </div>
 {#if openAlert}
 	<Alert {alertMessage} {alertType} on:close={closeAlert} />
 {/if}
 {#if openDeleteModal}
 	<dialog class="modal modal-open">
-		<DeleteModal on:close={closeDeleteModal} on:confirm={deleteRecord} />
+		<DeleteModal
+			on:close={closeDeleteModal}
+			on:confirm={deleteRecord}
+			message="¿Estás seguro de que deseas eliminar este producto?"
+		/>
 	</dialog>
 {/if}
-{#if _new == true}
+{#if _new}
 	<Modal on:close={() => updateData()}>
-		<Form {edit} on:message={OpenAlertMessage} on:close={() => updateData()} />
+		<Form {staticData} on:message={OpenAlertMessage} on:close={() => updateData()} />
 	</Modal>
 {/if}
-{#if edit == true}
+{#if edit}
 	<Modal on:close={() => updateData()}>
-		<Form {edit} {item} on:message={OpenAlertMessage} on:close={() => updateData()} />
+		<Form {edit} {item} {staticData} on:message={OpenAlertMessage} on:close={() => updateData()} />
 	</Modal>
 {/if}
-{#if data}
+{#if data.length}
 	<div class="overflow-x-auto">
 		<table class="table w-full">
 			<thead>
 				<tr>
 					<th class="text-center text-lg">
-						
-						<div class="flex items-center">
-							id
-							<button on:click={() => sortData('id')}
-								><SortIcon/></button
-							>
-						</div>
-					</th>
-					<th class="text-center text-lg" on:click={() => sortData('product_name')}>
 						<div class="flex items-center justify-center">
-							Nombre
-							<button><SortIcon/></button>
+							id
+							<button on:click={() => sortData('id')}><SortIcon /></button>
 						</div>
 					</th>
 					<th class="text-center text-lg">
 						<div class="flex items-center justify-center">
-							Descripcion
-							<button on:click={() => sortData('product_desc')}
-								><SortIcon/></button
-							>
+							Nombre
+							<button on:click={() => sortData('product_name')}><SortIcon /></button>
+						</div>
+					</th>
+					<th class="text-center text-lg">
+						<div class="flex items-center justify-center">
+							Descripción
+							<button on:click={() => sortData('product_desc')}><SortIcon /></button>
 						</div>
 					</th>
 					<th class="text-center text-lg">
 						<div class="flex items-center justify-center">
 							Categoría
-							<button on:click={() => sortData('category_id')}
-								><SortIcon/></button
-							>
+							<button on:click={() => sortData('category_id')}><SortIcon /></button>
 						</div>
 					</th>
 					<th class="text-center text-lg">
 						<div class="flex items-center justify-center">
 							Marca
-							<button on:click={() => sortData('brand_id')}
-								><SortIcon/></button
-							>
+							<button on:click={() => sortData('brand_id')}><SortIcon /></button>
 						</div>
 					</th>
 					<th class="text-center text-lg">
 						<div class="flex items-center justify-center">
 							Cantidad
-							<button on:click={() => sortData('product_quantity')}
-								><SortIcon/></button
-							>
+							<button on:click={() => sortData('product_quantity')}><SortIcon /></button>
 						</div>
 					</th>
-					{#if user.permissions != undefined && user.permissions.includes('products.create')}
-						<th>
-							<button class="btn btn-primary" on:click={() => (_new = true)}>Agregar</button>
-						</th>
-					{/if}
 				</tr>
 			</thead>
 			<tbody>
-				{#each products as product, i (product.id)}
+				{#each data as product (product.id)}
 					<tr class="hover">
 						<td>{product.id}</td>
 						<td class="text-center">{product.product_name}</td>
@@ -236,21 +185,19 @@
 						<td class="text-center">{product.cat_desc}</td>
 						<td class="text-center">{product.brand_name}</td>
 						<td class="text-center">{product.product_quantity}</td>
-						{#if user.permissions != undefined && user.permissions.includes('products.show')}
+						{#if user?.permissions?.includes('products.show')}
 							<td>
 								<button class="btn btn-info" on:click={() => router.visit(`/products/${product.id}`)}>Mostrar</button>
 							</td>
 						{/if}
-						{#if user.permissions != undefined && user.permissions.includes('products.update')}
+						{#if user?.permissions?.includes('products.update')}
 							<td>
 								<button class="btn btn-warning" on:click={() => openEditModal(product)}>Editar</button>
 							</td>
 						{/if}
-						{#if user.permissions != undefined && user.permissions.includes('products.destroy')}
+						{#if user?.permissions?.includes('products.destroy')}
 							<td>
-								<button class="btn btn-secondary" on:click={() => OpenDeleteModal(product.id)}
-									>Eliminar</button
-								>
+								<button class="btn btn-secondary" on:click={() => OpenDeleteModal(product.id)}>Eliminar</button>
 							</td>
 						{/if}
 					</tr>
@@ -258,11 +205,13 @@
 			</tbody>
 		</table>
 		<Pagination
-			current_page={current_page?current_page:1}
+			{current_page}
 			{total_pages}
 			{items_per_page}
 			on:page={handlePage}
 			on:row={handleRowsPerPage}
 		/>
 	</div>
+{:else}
+	<p class="text-center text-gray-500 mt-8">No hay registros</p>
 {/if}

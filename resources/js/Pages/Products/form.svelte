@@ -1,21 +1,16 @@
 <script>
-	import { onMount } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import { useForm } from '@inertiajs/svelte';
-	import {Textfield, Autocomplete} from '@components/FormComponents';
-	import {formatNumber, unformatNumber} from '@components/utilities/NumberFormat.js';
+	import { Textfield, Autocomplete } from '@components/FormComponents';
 
-	// Props from Inertia pre-loading
-	export let staticData;
-	export let userContext = null;
-	export let formConfig = null;
-	export let mode = 'create';
-	export let edit = mode === 'edit';
+	const dispatch = createEventDispatcher();
+
+	export let staticData = null;
+	export let edit = false;
 	export let item = null;
 
-	// Destructure static data from props
-	const { categories, brands, ivaTypes, measurementUnits } = staticData;
+	const { categories = [], brands = [], ivaTypes = [], measurementUnits = [] } = staticData ?? {};
 
-	// Form state management with Inertia
 	let form = useForm({
 		product_name: item?.product_name || '',
 		product_desc: item?.product_desc || '',
@@ -27,204 +22,177 @@
 		category_id: item?.category_id || '',
 		iva_type_id: item?.iva_type_id || '',
 		brand_id: item?.brand_id || '',
-		measurement_unit_id: item?.measurement_unit_id || ''
+		measurement_unit_id: item?.measurement_unit_id || '',
 	});
 
-	// UI state variables
 	let product_profit_percent = '';
-	let iva_type_selected = item ? { value: item.iva_type_id, label: item.iva_type?.iva_type_desc } : null;
-	let brand_selected = item ? { value: item.brand_id, label: item.brand?.brand_name } : null;
-	let measurement_selected = item ? { value: item.measurement_unit_id, label: item.measurement_unit?.unit_name } : null;
-	let category_selected = item ? { value: item.category_id, label: item.category?.cat_desc } : null;
-	// Form submission with Inertia
+	let category_selected = item ? { value: item.category_id, label: item.cat_desc } : null;
+	let brand_selected = item ? { value: item.brand_id, label: item.brand_name } : null;
+	let iva_type_selected = item ? { value: item.iva_type_id, label: item.iva_type_desc } : null;
+	let measurement_selected = item?.measurement_unit_id
+		? { value: item.measurement_unit_id, label: item.unit_name }
+		: null;
+
+	function close() {
+		dispatch('close');
+	}
+
 	function handleSubmit() {
-		// Update form data with selected values
 		form.category_id = category_selected?.value || null;
 		form.iva_type_id = iva_type_selected?.value || null;
 		form.measurement_unit_id = measurement_selected?.value || null;
 		form.brand_id = brand_selected?.value || null;
 
+		const options = {
+			onSuccess: () => {
+				dispatch('message', {
+					type: 'success',
+					message: edit ? 'Producto actualizado con éxito' : 'Producto creado con éxito',
+				});
+				close();
+			},
+		};
+
 		if (edit) {
-			form.put(`/products/${item.id}`, {
-				onSuccess: () => {
-					history.back();
-				},
-				onError: (errors) => {
-					console.error('Validation errors:', errors);
-				}
-			});
+			form.put(`/products/${item.id}`, options);
 		} else {
-			form.post('/products', {
-				onSuccess: () => {
-					history.back();
-				},
-				onError: (errors) => {
-					console.error('Validation errors:', errors);
-				}
-			});
+			form.post('/products', options);
 		}
 	}
-	// Helper functions for autocomplete options
-	function Categories(){
-		return categories.map(
-			category => ({
-				label: category.cat_desc,
-				value: category.id
-			})
-		)
+
+	function Categories() {
+		return categories.map((category) => ({ label: category.cat_desc, value: category.id }));
 	}
 
-	function Measurements(){
-		return measurementUnits.map(
-			measurement => ({
-				label: measurement.unit_name,
-				value: measurement.id
-			})
-		)
+	function Measurements() {
+		return measurementUnits.map((measurement) => ({ label: measurement.unit_name, value: measurement.id }));
 	}
 
-	function Brands(){
-		return brands.map(
-			brand => ({
-				label: brand.brand_name,
-				value: brand.id
-			})
-		)
+	function Brands() {
+		return brands.map((brand) => ({ label: brand.brand_name, value: brand.id }));
 	}
-	
-	function IvaTypes(){
-		return ivaTypes.map(
-			iva_type => ({
-				label: iva_type.iva_type_desc,
-				value: iva_type.id
-			})
-		)
+
+	function IvaTypes() {
+		return ivaTypes.map((iva_type) => ({ label: iva_type.iva_type_desc, value: iva_type.id }));
 	}
-	
+
 	function handleInput(value) {
-		if(value == null || value == undefined || value == ''){
+		if (value == null || value == undefined || value == '') {
 			product_profit_percent = 0;
 			return;
 		}
 		product_profit_percent = value;
-		// Calcula el precio de venta basado en el precio de costo y el porcentaje de ganancias
-		let porcentaje = parseInt(parseFloat(form.product_cost_price) + (parseFloat(form.product_cost_price) * parseFloat(product_profit_percent) / 100))
+		let porcentaje = parseInt(
+			parseFloat(form.product_cost_price) +
+				(parseFloat(form.product_cost_price) * parseFloat(product_profit_percent)) / 100
+		);
 		form.product_selling_price = porcentaje.toString();
 	}
 </script>
 
-<svelte:head>
-	<title>{edit ? "Actualizar Producto" : "Crear Producto"}</title>
-</svelte:head>
-
 <h3 class="mb-4 text-center text-2xl">
-	{edit ? "Actualizar Producto" : "Crear Producto"}
+	{edit ? 'Actualizar Producto' : 'Crear Producto'}
 </h3>
 
 <form on:submit|preventDefault={handleSubmit}>
 	<div class="grid grid-cols-2 gap-4">
-		<Textfield 
-			label="Nombre" 
+		<Textfield
+			label="Nombre"
 			required={true}
-			bind:value={form.product_name} 
-			errors={form.errors?.product_name ? {message: form.errors.product_name} : null} 
-		/>
-		<Textfield 
-			label="Descripcion" 
-			bind:value={form.product_desc} 
-			errors={form.errors?.product_desc ? {message: form.errors.product_desc} : null} 
-		/>
-		<Textfield 
-			label="Precio de costo" 
-			type="number"
-			step="0.01"
-			bind:value={form.product_cost_price} 
-			min="0"
-			errors={form.errors?.product_cost_price ? {message: form.errors.product_cost_price} : null} 
+			bind:value={form.product_name}
+			errors={form.errors?.product_name ? { message: form.errors.product_name } : null}
 		/>
 		<Textfield
-			label="Porcentaje de ganancias" 
+			label="Descripcion"
+			bind:value={form.product_desc}
+			errors={form.errors?.product_desc ? { message: form.errors.product_desc } : null}
+		/>
+		<Textfield
+			label="Precio de costo"
+			type="number"
+			step="0.01"
+			bind:value={form.product_cost_price}
+			min="0"
+			errors={form.errors?.product_cost_price ? { message: form.errors.product_cost_price } : null}
+		/>
+		<Textfield
+			label="Porcentaje de ganancias"
 			type="number"
 			step="0.01"
 			customFN={handleInput}
-			errors={form.errors?.product_profit_percent ? {message: form.errors.product_profit_percent} : null} 
+			errors={form.errors?.product_profit_percent ? { message: form.errors.product_profit_percent } : null}
 		/>
-		<Textfield 
-			label="Precio de venta" 
+		<Textfield
+			label="Precio de venta"
 			type="number"
 			step="0.01"
-			bind:value={form.product_selling_price} 
-			errors={form.errors?.product_selling_price ? {message: form.errors.product_selling_price} : null} 
+			bind:value={form.product_selling_price}
+			errors={form.errors?.product_selling_price ? { message: form.errors.product_selling_price } : null}
 		/>
-		<Textfield 
-			label="Cantidad" 
+		<Textfield
+			label="Cantidad"
 			type="number"
 			step="0.001"
 			min="0"
-			bind:value={form.product_quantity} 
-			errors={form.errors?.product_quantity ? {message: form.errors.product_quantity} : null} 
+			bind:value={form.product_quantity}
+			errors={form.errors?.product_quantity ? { message: form.errors.product_quantity } : null}
 		/>
-		<Textfield 
-			label="Código de barras" 
-			bind:value={form.product_barcode} 
-			errors={form.errors?.product_barcode ? {message: form.errors.product_barcode} : null} 
+		<Textfield
+			label="Código de barras"
+			bind:value={form.product_barcode}
+			errors={form.errors?.product_barcode ? { message: form.errors.product_barcode } : null}
 		/>
 		<Textfield
 			label="Imagen"
 			bind:value={form.product_image}
-			errors={form.errors?.product_image ? {message: form.errors.product_image} : null}
+			errors={form.errors?.product_image ? { message: form.errors.product_image } : null}
 		/>
 		<Autocomplete
-			errors={form.errors?.category_id ? {message: form.errors.category_id} : null}
+			errors={form.errors?.category_id ? { message: form.errors.category_id } : null}
 			label="Categoría"
 			bind:item_selected={category_selected}
 			items={Categories()}
 			searchTerm=""
 			showDropdown={false}
 			loading={false}
-			filterdItem={Categories()}
 		/>
 		<Autocomplete
-			errors={form.errors?.measurement_unit_id ? {message: form.errors.measurement_unit_id} : null}
+			errors={form.errors?.measurement_unit_id ? { message: form.errors.measurement_unit_id } : null}
 			label="Unidad de medida"
 			bind:item_selected={measurement_selected}
 			items={Measurements()}
 			searchTerm=""
 			showDropdown={false}
 			loading={false}
-			filterdItem={Measurements()}
 		/>
 		<Autocomplete
-			errors={form.errors?.brand_id ? {message: form.errors.brand_id} : null}
+			errors={form.errors?.brand_id ? { message: form.errors.brand_id } : null}
 			label="Marca"
 			bind:item_selected={brand_selected}
 			items={Brands()}
 			searchTerm=""
 			showDropdown={false}
 			loading={false}
-			filterdItem={Brands()}
 		/>
 		<Autocomplete
-			errors={form.errors?.iva_type_id ? {message: form.errors.iva_type_id} : null}
+			errors={form.errors?.iva_type_id ? { message: form.errors.iva_type_id } : null}
 			label="Tipo IVA"
 			bind:item_selected={iva_type_selected}
 			items={IvaTypes()}
 			searchTerm=""
 			showDropdown={false}
 			loading={false}
-			filterdItem={IvaTypes()}
 		/>
 	</div>
-	
+
+	{#if form.errors?.general}
+		<p class="text-red-500 mt-2">{form.errors.general}</p>
+	{/if}
+
 	<div class="flex gap-2 mt-4">
-		<button
-			type="submit"
-			class="btn btn-primary"
-			disabled={form.processing}>
+		<button type="submit" class="btn btn-primary" disabled={form.processing}>
 			{form.processing ? 'Guardando...' : 'Guardar'}
 		</button>
-		<button class="btn btn-secondary" type="button" on:click={() => history.back()}>
-			Cancelar
-		</button>
+		<button class="btn btn-secondary" type="button" on:click={close}>Cancelar</button>
 	</div>
 </form>
