@@ -96,7 +96,7 @@ class ProductsController extends WebController
                 return response()->json(['message' => 'Registro creado con exito', 'data' => $product]);
             }
 
-            return back()->with('success', 'Producto creado con éxito');
+            return redirect()->route('products.index')->with('success', 'Producto creado con éxito');
         } catch (\Exception $e) {
             if ($request->wantsJson()) {
                 return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo crear registro'], 400);
@@ -216,7 +216,7 @@ class ProductsController extends WebController
                 return response()->json(['message' => 'Registro Actualizado con exito', 'data' => $product]);
             }
 
-            return back()->with('success', 'Producto actualizado con éxito');
+            return redirect()->route('products.index')->with('success', 'Producto actualizado con éxito');
         } catch (\Exception $e) {
             if ($request->wantsJson()) {
                 return response()->json(['error' => $e->getMessage(), 'message' => 'No se pudo actualizar los datos'], 500);
