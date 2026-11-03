@@ -1,6 +1,6 @@
 # Contalink
 
-Sistema de gestión financiera y operativa para pymes, desarrollado con Laravel, Inertia y Vite. El proyecto centraliza la administración de ventas, compras, caja, usuarios, clientes/proveedores, productos y reportes, con una API REST segura y un frontend moderno para la operación diaria.
+Sistema de gestión financiera y operativa para pymes, desarrollado con Laravel, Inertia y Vite. El proyecto centraliza la administración de ventas, compras, caja, usuarios, clientes/proveedores, productos y reportes, con una arquitectura monolito que integra frontend y backend, facilitando la operación diaria.
 
 ## Descripción general
 
@@ -62,25 +62,24 @@ Contalink está pensado para negocios que necesitan llevar un control claro de s
 - Control de acceso por módulo
 - Registro de auditoría y trazabilidad de cambios
 
-### 7. API y servicios auxiliares
+### 7. Frontend y navegación
 
-- Endpoints para ventas, compras, proveedores, cajas, usuarios y permisos
-- Búsqueda dinámica y datos en tiempo real
-- Soporte para operaciones complejas de detalle y pagos
-- Integración con Swagger para documentación de la API
+- Arquitectura monolito con Inertia.js y componentes Svelte
+- Navegación SPA sin recargas de página
+- Componentes reactivos para todas las vistas del sistema
+- Integración directa con los controladores de Laravel
 
 ## Stack tecnológico
 
 - PHP 8.3+
 - Laravel 13
 - PostgreSQL
-- Inertia.js
+- Inertia.js (arquitectura monolito frontend-backend)
 - Vite
-- Svelte
-- Sanctum
-- Spatie Laravel Permission
-- Swagger
-- DomPDF
+- Svelte (framework frontend para Inertia)
+- Sanctum (autenticación)
+- Spatie Laravel Permission (roles y permisos)
+- DomPDF (generación de PDFs)
 
 ## Requisitos
 
@@ -184,8 +183,7 @@ php artisan serve
 
 Luego abre en el navegador:
 
-- Frontend: http://localhost:8000
-- Swagger: http://localhost:8000/swagger/documentation
+- Aplicación: http://localhost:8000
 
 ## Estructura principal del proyecto
 
@@ -193,17 +191,22 @@ Luego abre en el navegador:
 - `routes/` - definiciones de rutas web y API
 - `database/migrations/` - migraciones de base de datos
 - `database/seeders/` - sembradores de datos iniciales
-- `resources/` - vistas, assets y frontend con Vite/Svelte
+- `resources/js/Pages/` - componentes Svelte para Inertia (vistas del frontend)
+- `resources/js/Layouts/` - layouts reutilizables para las páginas
+- `resources/js/app.js` - entrada del frontend con Inertia.js
+- `resources/` - assets y configuración de Vite/Svelte
 - `public/` - archivos estáticos y build
 - `tests/` - pruebas automáticas
 
 ## Documentación
 
-La API está documentada con Swagger. Puedes acceder a la documentación desde:
+La documentación de la API está disponible en la ruta de Swagger. Puedes acceder a ella desde:
 
 ```text
 http://localhost:8000/swagger/documentation
 ```
+
+Para entender la estructura del frontend, revisa los componentes Svelte en `resources/js/Pages/` y los controladores en `app/Http/Controllers/Web/`.
 
 ## Capturas
 
@@ -213,5 +216,5 @@ http://localhost:8000/swagger/documentation
 ## Notas
 
 - El sistema está orientado a entornos de gestión comercial y financiera de pequeñas y medianas empresas.
-- La API está protegida con autenticación y permisos por módulo.
+- El frontend utiliza Inertia.js para proporcionar una experiencia SPA sin recargas.
 - Para desarrollo local, la combinación recomendada es `php artisan dev` junto con PostgreSQL configurado correctamente.
