@@ -25,6 +25,7 @@ use App\Http\Controllers\TillsProcess\TillsProcessController;
 use App\Http\Controllers\Refunds\RefundsController;
 use App\Http\Controllers\Roles\RolesController;
 use App\Http\Controllers\ProofPaypments\ProofPaymentsController;
+use App\Http\Controllers\Web\DashboardController;
 
 // ========================================
 // PUBLIC ROUTES (No Authentication Required)
@@ -58,11 +59,9 @@ Route::middleware(['web'])->group(function () {
 });
 
 // Dashboard - main authenticated landing page
-Route::get('/dashboard', function () {
-    return Inertia::render('Home', [
-        'name' => auth()->user()->name ?? 'Usuario'
-    ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 // ========================================
 // AUTHENTICATED ROUTES WITH PROPER MIDDLEWARE AND CONSISTENT NAMING

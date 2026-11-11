@@ -175,13 +175,15 @@ class TillsController extends ApiController
             if($till->till_status == true){
                 $amount = DB::select("
                     WITH apertura AS (
-                        SELECT td.created_at
-                        FROM till_details td
-                        WHERE td.deleted_at IS NULL
-                        AND td.td_desc = 'Apertura de Caja'
-                        AND td.till_id = {$id}
-                        ORDER BY td.created_at DESC
-                        LIMIT 1
+                        SELECT COALESCE((
+                            SELECT td.created_at
+                            FROM till_details td
+                            WHERE td.deleted_at IS NULL
+                            AND td.td_desc = 'Apertura de Caja'
+                            AND td.till_id = {$id}
+                            ORDER BY td.created_at DESC
+                            LIMIT 1
+                        ), CURRENT_TIMESTAMP) AS created_at
                     ),
                     egresos AS (
                         SELECT COALESCE(SUM(td.td_amount), 0) AS suma
