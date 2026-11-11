@@ -31,6 +31,11 @@ class DashboardController
                     ? $this->openTillMetrics()
                     : null,
             ],
+            'links' => [
+                'salesCreate' => $user->can('sales.create'),
+                'purchasesCreate' => $user->can('purchases.create'),
+                'tillsShow' => $user->can('tills.show'),
+            ],
         ]);
     }
 

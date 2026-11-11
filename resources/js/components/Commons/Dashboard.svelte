@@ -3,6 +3,7 @@
 
     export let metrics = null;
     export let period = 'month';
+    export let links = null;
 
     const periods = [
         { value: 'today', label: 'Hoy' },
@@ -20,6 +21,10 @@
 
     function changePeriod(value) {
         router.get('/dashboard', { period: value }, { preserveScroll: true, preserveState: true });
+    }
+
+    function goTo(url) {
+        router.visit(url);
     }
 </script>
 
@@ -49,6 +54,11 @@
                         <h3 class="card-title text-base">Ventas</h3>
                         <p class="text-2xl font-bold">Gs. {formatAmount(metrics.sales.amount)}</p>
                         <p class="text-sm opacity-70">{metrics.sales.count} operaciones en el período</p>
+                        {#if links?.salesCreate}
+                            <div class="card-actions justify-end">
+                                <button class="btn btn-sm btn-primary" type="button" on:click={() => goTo('/sales/create')}>Nueva venta</button>
+                            </div>
+                        {/if}
                     </div>
                 </article>
             {/if}
@@ -59,6 +69,11 @@
                         <h3 class="card-title text-base">Compras</h3>
                         <p class="text-2xl font-bold">Gs. {formatAmount(metrics.purchases.amount)}</p>
                         <p class="text-sm opacity-70">{metrics.purchases.count} operaciones en el período</p>
+                        {#if links?.purchasesCreate}
+                            <div class="card-actions justify-end">
+                                <button class="btn btn-sm btn-primary" type="button" on:click={() => goTo('/purchases/create')}>Nueva compra</button>
+                            </div>
+                        {/if}
                     </div>
                 </article>
             {/if}
@@ -72,7 +87,11 @@
                             <ul class="mt-1 space-y-1 text-sm">
                                 {#each metrics.openTills.items as till (till.id)}
                                     <li class="flex justify-between gap-3">
-                                        <span>{till.name}</span>
+                                        {#if links?.tillsShow}
+                                            <button class="link link-hover text-left" type="button" on:click={() => goTo(`/tills/${till.id}`)}>{till.name}</button>
+                                        {:else}
+                                            <span>{till.name}</span>
+                                        {/if}
                                         <span class="font-medium">Gs. {formatAmount(till.amount)}</span>
                                     </li>
                                 {/each}
