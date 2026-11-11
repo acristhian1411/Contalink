@@ -7,16 +7,12 @@
 
     const dispatch = createEventDispatcher();
     export let payment_type_id;
+    export let proof_payments = [];
     let deleteModal = false;
     let deleteIdx = 0;
     let formRef;
     let errors = null;
-    let form
-    let proof_payments = [
-        {id: 1, proof_payment_desc: ''},
-    ];
-
-    $ : getProofPayments(payment_type_id);  
+    let form  
 
 
     function OpenDeleteModal(item) {
@@ -41,7 +37,7 @@
 
     function deleteProofPayment() {
         let details = proof_payments
-        axios.delete(`/api/proofpaypments/${details[deleteIdx].id}`).then((res) => {
+        axios.delete(`/proof-payments/${details[deleteIdx].id}`).then((res) => {
             let detail = {
                 detail: {
                     type: 'delete',
@@ -64,7 +60,7 @@
     }
 
     function getProofPayments(id) {
-        axios.get(`/api/proofpaypments_type/${id}`).then((response) => {
+        axios.get(`/proof-payments/${id}`).then((response) => {
             
             response.data.data.length > 0 && (
                 proof_payments = response.data.data
@@ -118,7 +114,7 @@
             console.log('se supone que hace algo')
         }
         dispatch('submitted');
-        axios.post(`/api/proofpaypments_multiple`, {
+        axios.post(`/proof-payments/${payment_type_id}/multiple`, {
             payments: proof_payments.filter(x => x.created == false && x.edited == true).map(x => ({proof_payment_desc: x.proof_payment_desc, payment_type_id: payment_type_id}))
         }).then((res) => {
             let detail = {
@@ -141,7 +137,7 @@
         });
     }
     function handleEdit() {
-        axios.put(`/api/proofpaypments_multiple`, {
+        axios.put(`/proof-payments/${payment_type_id}/multiple`, {
             payments: proof_payments.filter(x => x.created == true && x.edited == true).map(x => ({
                 id: x.id,
                 proof_payment_desc: x.proof_payment_desc, 

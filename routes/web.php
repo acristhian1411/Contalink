@@ -24,6 +24,7 @@ use App\Http\Controllers\Tills\TillsController;
 use App\Http\Controllers\TillsProcess\TillsProcessController;
 use App\Http\Controllers\Refunds\RefundsController;
 use App\Http\Controllers\Roles\RolesController;
+use App\Http\Controllers\ProofPaypments\ProofPaymentsController;
 
 // ========================================
 // PUBLIC ROUTES (No Authentication Required)
@@ -268,6 +269,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [ContactTypesController::class, 'store'])->middleware('permission:contacttypes.create')->name('store');
         Route::put('/{id}', [ContactTypesController::class, 'update'])->middleware('permission:contacttypes.update')->name('update');
         Route::delete('/{id}', [ContactTypesController::class, 'destroy'])->middleware('permission:contacttypes.destroy')->name('destroy');
+    });
+
+    // Proof Payments
+    Route::prefix('proof-payments')->name('proof-payments.')->group(function () {
+        Route::get('/', [ProofPaymentsController::class, 'index'])->middleware('permission:proof_payments.index')->name('index');
+        Route::post('/', [ProofPaymentsController::class, 'store'])->middleware('permission:proof_payments.create')->name('store');
+        Route::put('/{id}', [ProofPaymentsController::class, 'update'])->middleware('permission:proof_payments.update')->name('update');
+        Route::delete('/{id}', [ProofPaymentsController::class, 'destroy'])->middleware('permission:proof_payments.destroy')->name('destroy');
+        Route::get('/{payment_type_id}', [ProofPaymentsController::class, 'showByType'])->middleware('permission:proof_payments.index')->name('by-type');
+        Route::put('/{payment_type_id}/multiple', [ProofPaymentsController::class, 'updateMultiple'])->middleware('permission:proof_payments.update')->name('update.multiple');
+        Route::post('/{payment_type_id}/multiple', [ProofPaymentsController::class, 'storeMultiple'])->middleware('permission:proof_payments.create')->name('store.multiple');
     });
 
     // ========================================

@@ -116,6 +116,7 @@
         <div class="mt-4 mb-4">
             <Form
                 payment_type_id={id}
+                proof_payments={item.proof_payments ?? []}
                 bind:this={childFormRef}
                 on:message={OpenAlertMessage}
             />
