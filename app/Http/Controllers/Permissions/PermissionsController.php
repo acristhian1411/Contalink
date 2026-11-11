@@ -84,7 +84,7 @@ class PermissionsController extends ApiController
             $role = Role::find($id);
             $permissions = $role->permissions;
             // $permissions = Permission::where('role_id',$id)->get();
-            $from = $req->wantsJson ? 'api' : 'web';
+            $from = ($req->wantsJson() || $req->boolean('wantsJson')) ? 'api' : 'web';
             // dd($from);
             return $this->showAll($permissions, $from ,'',200);
         }
@@ -111,7 +111,7 @@ class PermissionsController extends ApiController
             $permissionsNotAssigned = $allPermissions->filter(function ($permission) use ($assignedPermissions) {
                 return !in_array($permission->id, $assignedPermissions);
             });
-            $from = $req->wantsJson ? 'api' : 'web';
+            $from = ($req->wantsJson() || $req->boolean('wantsJson')) ? 'api' : 'web';
             return $this->showAll($permissionsNotAssigned, $from ,'',200);
         }
         catch(\Exception $e){

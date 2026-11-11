@@ -3,13 +3,13 @@
     import { fetchPermissionsForRole, fetchPermissionsNotContainRole, assignPermissionsToRole, removePermissionsFromRole } from './api';
   
     export let roleName;
+    export let roleId;
     let assignedPermissions = [];
     let unassignedPermissions = [];
     let selectedUnassigned = [];
     let selectedAssigned = [];
     let assigned;
     let unassigned;
-    let roleId = 1; // ID del rol a manejar
   
     onMount(async () => {
       assigned  = (await fetchPermissionsForRole(roleId)).assigned || [];
@@ -37,6 +37,8 @@
             unassignedPermissions = [...unassignedPermissions, ...selectedAssigned];
             assignedPermissions = assignedPermissions.filter(p => !selectedAssigned.includes(p));
             selectedAssigned = [];
+            assigned = (await fetchPermissionsForRole(roleId)).assigned || [];
+            unassigned = (await fetchPermissionsNotContainRole(roleId)).unassigned || [];
         
         }
     };

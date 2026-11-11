@@ -82,5 +82,5 @@
     </div>
 {/if}
 <div transition:blur>
-    <Permissions roleName={role.name} />
+    <Permissions roleId={role.id} roleName={role.name} />
 </div>

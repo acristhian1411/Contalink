@@ -17,7 +17,7 @@ export async function fetchPermissionsForRole(roleId) {
   }
   
   export async function assignPermissionsToRole(roleId, permissions) {
-    const res = await fetch(`/api/users/${roleId}/roles?wantsJson=true`, {
+    const res = await fetch(`/api/roles/${roleId}/permissions?wantsJson=true`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -26,7 +26,7 @@ export async function fetchPermissionsForRole(roleId) {
         permissions: permissions,
       }),
     });
-  
+
     return await res.json();
   }
   
